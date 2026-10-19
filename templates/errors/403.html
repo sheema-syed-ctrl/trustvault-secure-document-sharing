@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}403 Access Denied — TrustVault{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-8 text-center">
+        <div class="display-1 text-danger fw-bold mb-3">
+            <i class="bi bi-shield-slash"></i> 403
+        </div>
+        <h2 class="fw-bold mb-3">Access Denied / Forbidden</h2>
+        <p class="lead text-muted mb-4">
+            You do not have the required authorization or permissions to access this document or resource.
+            This incident has been securely recorded in the TrustVault audit trail.
+        </p>
+        {% if exception %}
+            <div class="alert alert-warning d-inline-block text-start small mb-4">
+                <strong>Reason:</strong> {{ exception }}
+            </div>
+        {% endif %}
+        <div>
+            <a href="{% url 'core:home' %}" class="btn btn-outline-secondary px-4 me-2">
+                <i class="bi bi-house-door me-1"></i> Home
+            </a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard:index' %}" class="btn btn-primary px-4">
+                    <i class="bi bi-speedometer2 me-1"></i> My Dashboard
+                </a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="btn btn-primary px-4">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Log In
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,2 @@
+# This directory contains private, encrypted/restricted uploaded documents.
+# Files here must NEVER be served directly via web server public paths.

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}TrustVault — Secure Document Sharing with a Real Audit Trail{% endblock %}
+
+{% block content %}
+<div class="row align-items-center py-5">
+    <div class="col-lg-7">
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill mb-3">
+            <i class="bi bi-shield-lock me-1"></i> Snovasys Fresher Hiring Challenge 2026
+        </span>
+        <h1 class="display-4 fw-bold text-body-emphasis mb-3">
+            Secure Document Sharing with a <span class="text-primary">Real Audit Trail</span>
+        </h1>
+        <p class="lead text-muted mb-4">
+            TrustVault enforces strict server-side authorization, zero-trust document storage,
+            granular read/edit permissions, instant revocation, and tamper-resistant audit logging.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+            <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg px-4 gap-3 shadow-sm">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Access TrustVault
+            </a>
+            <a href="{% url 'accounts:register' %}" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="bi bi-person-plus me-1"></i> Register Account
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-5 mt-4 mt-lg-0">
+        <div class="card border-0 shadow-lg bg-dark text-white rounded-4 overflow-hidden">
+            <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center py-3">
+                <span class="fw-semibold text-light small"><i class="bi bi-terminal me-2 text-primary"></i>Security Guarantees</span>
+                <span class="badge bg-success-subtle text-success">Verified Active</span>
+            </div>
+            <div class="card-body p-4 font-monospace small">
+                <div class="mb-2 text-success">
+                    <i class="bi bi-check-lg me-1"></i> <strong>Zero Direct Media URL Access:</strong> Protected storage root
+                </div>
+                <div class="mb-2 text-info">
+                    <i class="bi bi-check-lg me-1"></i> <strong>Default Deny RBAC:</strong> Server-side evaluated checks
+                </div>
+                <div class="mb-2 text-warning">
+                    <i class="bi bi-check-lg me-1"></i> <strong>File Signature Verification:</strong> Magic bytes validated
+                </div>
+                <div class="mb-2 text-light">
+                    <i class="bi bi-check-lg me-1"></i> <strong>Real Audit Logging:</strong> Append-only activity ledger
+                </div>
+                <div class="text-secondary">
+                    <i class="bi bi-check-lg me-1"></i> <strong>Instant Revocation:</strong> Immediate loss of document access
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 py-4 row-cols-1 row-cols-md-3">
+    <div class="col">
+        <div class="card h-100 border-0 shadow-sm p-3 rounded-3">
+            <div class="card-body">
+                <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-3 mb-3 rounded-3 px-3 py-2">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h4 class="card-title fw-bold">3 Explicit Roles</h4>
+                <p class="card-text text-muted">
+                    Administrators, Document Owners, and Viewers. Admins cannot view document content by default, strictly isolating operational admin from private contents.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 border-0 shadow-sm p-3 rounded-3">
+            <div class="card-body">
+                <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-success bg-gradient fs-3 mb-3 rounded-3 px-3 py-2">
+                    <i class="bi bi-key-fill"></i>
+                </div>
+                <h4 class="card-title fw-bold">Object-Level Permissions</h4>
+                <p class="card-text text-muted">
+                    Granular READ vs. EDIT authorization. Owners share documents with named users, and revoked permissions take effect instantaneously.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 border-0 shadow-sm p-3 rounded-3">
+            <div class="card-body">
+                <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-danger bg-gradient fs-3 mb-3 rounded-3 px-3 py-2">
+                    <i class="bi bi-journal-check"></i>
+                </div>
+                <h4 class="card-title fw-bold">Real Audit Trail</h4>
+                <p class="card-text text-muted">
+                    Every upload, view, download, edit, share, revocation, and denied attempt is permanently recorded with actor, timestamp, IP, and event context.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

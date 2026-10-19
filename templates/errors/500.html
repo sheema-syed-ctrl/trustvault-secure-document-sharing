@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}500 Internal Error — TrustVault{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-8 text-center">
+        <div class="display-1 text-danger fw-bold mb-3">
+            <i class="bi bi-cpu"></i> 500
+        </div>
+        <h2 class="fw-bold mb-3">Internal Server Error</h2>
+        <p class="lead text-muted mb-4">
+            An unexpected error occurred while processing your request. The incident has been recorded in system error logs for investigation.
+        </p>
+        <a href="{% url 'core:home' %}" class="btn btn-primary px-4">
+            <i class="bi bi-house-door me-1"></i> Return Home
+        </a>
+    </div>
+</div>
+{% endblock %}

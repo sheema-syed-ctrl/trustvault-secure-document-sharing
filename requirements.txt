@@ -1,0 +1,13 @@
+# TrustVault Core Dependencies
+# Snovasys Fresher Hiring Challenge 2026
+
+Django>=5.1.0,<5.2.0
+python-dotenv>=1.0.1
+filetype>=1.2.0
+
+# Testing Framework
+pytest>=8.0.0
+pytest-django>=4.9.0
+
+# Production Database Driver (Optional for PostgreSQL deployments)
+# psycopg2-binary>=2.9.9
