@@ -62,3 +62,6 @@ htmlcov/
 .DS_Store
 Thumbs.db
 .obsidian/
+
+# Archive and packaging artifacts
+*.zip
