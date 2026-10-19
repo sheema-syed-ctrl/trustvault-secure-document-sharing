@@ -59,6 +59,8 @@ class Document(models.Model):
             models.Index(fields=['owner', '-created_at']),
             models.Index(fields=['category']),
             models.Index(fields=['uuid']),
+            models.Index(fields=['name'], name='idx_doc_name'),
+            models.Index(fields=['-created_at'], name='idx_doc_created_at_desc'),
         ]
 
     def __str__(self):
