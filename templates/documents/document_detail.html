@@ -26,6 +26,11 @@
         </div>
     </div>
     <div class="d-flex gap-2">
+        {% if can_download %}
+            <a href="{% url 'documents:download' document.id %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-download me-1"></i> Download Document
+            </a>
+        {% endif %}
         {% if can_edit %}
             <a href="{% url 'documents:edit' document.id %}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-pencil me-1"></i> Edit Metadata

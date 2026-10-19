@@ -30,14 +30,55 @@ class DocumentService:
     def get_protected_storage_path(storage_filename: str) -> Path:
         """
         Resolves internal storage path and ensures the target strictly resides
-        within PROTECTED_MEDIA_ROOT, preventing directory traversal.
+        within PROTECTED_MEDIA_ROOT, preventing directory traversal and symlink escape.
         """
         root = Path(settings.PROTECTED_MEDIA_ROOT).resolve()
         target = (root / storage_filename).resolve()
 
-        if not str(target).startswith(str(root)):
-            raise PermissionDenied("Security violation: Path traversal attempt detected.")
+        if not target.is_relative_to(root):
+            raise PermissionDenied("Security violation: Path traversal or symlink escape attempt detected.")
         return target
+
+    @classmethod
+    def get_authorized_file(cls, actor, document_id) -> tuple:
+        """
+        Retrieves an open read file handle and document instance for authorized download.
+        Enforces:
+          - Mandatory authentication of actor.
+          - Centralized object authorization via PermissionService (READ permission required).
+          - Path traversal and symlink validation.
+          - Physical file existence verification.
+        Returns:
+          tuple: (open_binary_file_handle, document_instance)
+        Raises:
+          PermissionDenied: If actor lacks authentication or READ authorization.
+          Document.DoesNotExist: If document is not found.
+          FileNotFoundError: If physical storage file is missing from private storage.
+        """
+        if not actor or not actor.is_authenticated:
+            raise PermissionDenied("Authentication required to access documents.")
+
+        document = Document.objects.select_related('owner').get(pk=document_id)
+
+        from permissions.services import PermissionService
+        if not PermissionService.can_read(actor, document):
+            logger.warning(
+                f"Unauthorized download attempt: User '{actor.username}' (ID: {actor.pk}, Role: {actor.role}) "
+                f"denied access to document {document.pk} ('{document.name}')."
+            )
+            raise PermissionDenied("Access denied: You do not have authorization to download this document.")
+
+        target_path = cls.get_protected_storage_path(document.storage_filename)
+
+        if not target_path.exists() or not target_path.is_file():
+            logger.error(
+                f"Physical storage file missing for authorized document: "
+                f"Document ID: {document.pk}, Storage File: {document.storage_filename}, Target: {target_path}"
+            )
+            raise FileNotFoundError("Storage file could not be located in secure vault.")
+
+        file_handle = open(target_path, 'rb')
+        return file_handle, document
 
     @classmethod
     def upload_document(

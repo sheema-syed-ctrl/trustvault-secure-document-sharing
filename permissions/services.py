@@ -6,6 +6,7 @@ Evaluates document ownership, granular READ and EDIT permissions, and cross-user
 
 from typing import Optional
 from django.db.models import Q, QuerySet
+from django.core.exceptions import PermissionDenied, ValidationError
 from documents.models import Document
 from .models import DocumentPermission, PermissionType
 
@@ -92,6 +93,52 @@ class PermissionService:
             return False
 
         return document.owner_id == user.pk
+
+    @classmethod
+    def grant_permission(
+        cls,
+        actor,
+        document: Document,
+        target_user,
+        permission_type: str
+    ) -> DocumentPermission:
+        """
+        Grants or updates access to a document for a target user.
+        Strictly restricted to the Document Owner at the service layer.
+        """
+        if not cls.can_manage_permissions(actor, document):
+            raise PermissionDenied("Access denied: Only the document owner can grant permissions for this document.")
+
+        if document.owner_id == target_user.pk:
+            raise ValidationError("Redundant permission: Document owner already possesses inherent, authoritative access.")
+
+        if permission_type not in PermissionType.values:
+            raise ValidationError(f"Invalid permission type: '{permission_type}'.")
+
+        permission, created = DocumentPermission.objects.update_or_create(
+            document=document,
+            user=target_user,
+            defaults={
+                'permission_type': permission_type,
+                'granted_by': actor,
+            }
+        )
+        return permission
+
+    @classmethod
+    def revoke_permission(cls, actor, document: Document, target_user) -> bool:
+        """
+        Revokes a granted permission on a document.
+        Strictly restricted to the Document Owner at the service layer.
+        """
+        if not cls.can_manage_permissions(actor, document):
+            raise PermissionDenied("Access denied: Only the document owner can revoke permissions for this document.")
+
+        deleted_count, _ = DocumentPermission.objects.filter(
+            document=document,
+            user=target_user
+        ).delete()
+        return deleted_count > 0
 
     @classmethod
     def has_permission(cls, user, document: Document, permission_type: str) -> bool:

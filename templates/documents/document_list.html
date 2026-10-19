@@ -119,6 +119,9 @@
                                 <a href="{% url 'documents:detail' doc.id %}" class="btn btn-outline-primary" title="View Details">
                                     <i class="bi bi-info-circle me-1"></i> Details
                                 </a>
+                                <a href="{% url 'documents:download' doc.id %}" class="btn btn-outline-success" title="Download Document">
+                                    <i class="bi bi-download"></i>
+                                </a>
                                 {% if doc.owner == user %}
                                     <a href="{% url 'documents:edit' doc.id %}" class="btn btn-outline-secondary" title="Edit Metadata">
                                         <i class="bi bi-pencil"></i>
