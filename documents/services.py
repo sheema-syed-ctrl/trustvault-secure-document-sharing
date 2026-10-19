@@ -104,10 +104,11 @@ class DocumentService:
     ) -> Document:
         """
         Modifies user-facing document metadata.
-        Strictly restricted to the document owner (or superuser).
+        Restricted to the document owner or users with explicit EDIT permission.
         """
-        if document.owner != actor and not actor.is_superuser:
-            raise PermissionDenied("Access denied: You can only edit metadata for your own documents.")
+        from permissions.services import PermissionService
+        if not PermissionService.can_edit(actor, document):
+            raise PermissionDenied("Access denied: You do not have authorization to edit this document.")
 
         document.name = name.strip()
         document.description = description.strip()
@@ -119,10 +120,11 @@ class DocumentService:
     def delete_document(cls, document: Document, actor) -> bool:
         """
         Deletes a document record and safely removes the physical storage file.
-        Strictly restricted to the document owner (or superuser).
+        Strictly restricted to the document owner.
         """
-        if document.owner != actor and not actor.is_superuser:
-            raise PermissionDenied("Access denied: You can only delete your own documents.")
+        from permissions.services import PermissionService
+        if not PermissionService.can_delete(actor, document):
+            raise PermissionDenied("Access denied: Only the document owner can delete this document.")
 
         target_path = cls.get_protected_storage_path(document.storage_filename)
 

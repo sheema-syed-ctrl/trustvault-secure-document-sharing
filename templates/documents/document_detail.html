@@ -14,15 +14,24 @@
                 <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
                     {{ document.get_category_display }}
                 </span>
+                {% if effective_permission == 'OWNER' %}
+                    <span class="badge bg-primary"><i class="bi bi-person-fill-lock me-1"></i>Owner</span>
+                {% elif effective_permission == 'EDIT' %}
+                    <span class="badge bg-warning text-dark"><i class="bi bi-pencil-fill me-1"></i>Edit Access</span>
+                {% elif effective_permission == 'READ' %}
+                    <span class="badge bg-info text-dark"><i class="bi bi-eye-fill me-1"></i>Read Only</span>
+                {% endif %}
             </div>
             <p class="text-muted small mb-0">Owned by <strong>{{ document.owner.username }}</strong> &bull; Uploaded on {{ document.created_at|date:"M d, Y H:i" }}</p>
         </div>
     </div>
     <div class="d-flex gap-2">
-        {% if is_owner %}
+        {% if can_edit %}
             <a href="{% url 'documents:edit' document.id %}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-pencil me-1"></i> Edit Metadata
             </a>
+        {% endif %}
+        {% if can_delete %}
             <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteDocModal">
                 <i class="bi bi-trash me-1"></i> Delete
             </button>
@@ -115,7 +124,7 @@
     </div>
 </div>
 
-{% if is_owner %}
+{% if can_delete %}
     <!-- Delete Modal -->
     <div class="modal fade" id="deleteDocModal" tabindex="-1" aria-labelledby="deleteDocModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">

@@ -41,16 +41,20 @@ def admin_dashboard_view(request):
 
 
 from documents.models import Document
+from permissions.models import DocumentPermission
+from permissions.services import PermissionService
 
 
 @login_required
 def owner_dashboard_view(request):
     """Document Owner dashboard overview."""
     user_docs = Document.objects.filter(owner=request.user)
+    active_perms = DocumentPermission.objects.filter(document__owner=request.user)
     context = {
         'recent_documents': user_docs.order_by('-created_at')[:5],
         'total_documents': user_docs.count(),
-        'shared_count': 0,
+        'shared_count': user_docs.filter(permissions__isnull=False).distinct().count(),
+        'active_permissions': active_perms.count(),
     }
     return render(request, 'dashboard/owner_dashboard.html', context)
 
@@ -58,8 +62,9 @@ def owner_dashboard_view(request):
 @login_required
 def viewer_dashboard_view(request):
     """Viewer dashboard overview."""
+    accessible_docs = PermissionService.get_accessible_documents(request.user)
     context = {
-        'accessible_documents': [],  # Integrated with DocumentPermission in Phase 04
-        'total_accessible': 0,
+        'accessible_documents': accessible_docs.order_by('-created_at')[:5],
+        'total_accessible': accessible_docs.count(),
     }
     return render(request, 'dashboard/viewer_dashboard.html', context)

@@ -1,7 +1,7 @@
 """
 Document management views for TrustVault.
-Implements document listing, secure upload, metadata management, and deletion.
-Enforces strict server-side owner isolation and default-deny authorization.
+Implements document listing, secure upload, metadata inspection, editing, and deletion.
+Enforces centralized server-side object authorization via PermissionService.
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -12,6 +12,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from accounts.decorators import owner_required
+from permissions.services import PermissionService
 from .models import Document, DocumentCategory
 from .forms import DocumentUploadForm, DocumentMetadataEditForm
 from .services import DocumentService
@@ -20,22 +21,17 @@ from .services import DocumentService
 @login_required
 def document_list_view(request):
     """
-    Displays accessible documents based on user role:
-      - Document Owners see their own uploaded documents.
-      - Administrators see metadata index for audit/management (no file downloads).
-      - Viewers see empty list (until Phase 04/06 permissions engine).
+    Displays accessible documents authorized under the Permission Engine:
+      - Document Owners see their owned documents.
+      - Users with explicit READ or EDIT grants see shared documents.
+      - Administrators see only documents they own or have been explicitly granted.
     """
     user = request.user
     category_filter = request.GET.get('category', '').strip()
     search_query = request.GET.get('q', '').strip()
 
-    if user.is_owner_role:
-        documents_qs = Document.objects.filter(owner=user)
-    elif user.is_admin_role:
-        documents_qs = Document.objects.all()
-    else:
-        # Viewers have not been granted explicit permissions yet (Phase 04/06)
-        documents_qs = Document.objects.none()
+    # Query authorized documents using centralized PermissionService
+    documents_qs = PermissionService.get_accessible_documents(user)
 
     if category_filter:
         documents_qs = documents_qs.filter(category=category_filter)
@@ -94,16 +90,25 @@ def document_upload_view(request):
 def document_detail_view(request, doc_id):
     """
     Displays comprehensive document metadata (size, hash, MIME type, upload timestamp).
-    Enforces cross-owner isolation: Users can view details only for their own documents.
+    Enforces centralized object-level authorization: READ permission required.
     """
     document = get_object_or_404(Document, pk=doc_id)
 
-    # Server-side authorization check
-    if document.owner != request.user and not request.user.is_admin_role:
-        raise PermissionDenied("Access denied: You do not have authorization to view this document's details.")
+    # Server-side authorization check via PermissionService
+    if not PermissionService.can_read(request.user, document):
+        raise PermissionDenied("Access denied: You do not have authorization to view this document.")
+
+    can_edit = PermissionService.can_edit(request.user, document)
+    can_delete = PermissionService.can_delete(request.user, document)
+    can_manage_permissions = PermissionService.can_manage_permissions(request.user, document)
+    effective_permission = PermissionService.get_effective_permission(request.user, document)
 
     return render(request, 'documents/document_detail.html', {
         'document': document,
+        'can_edit': can_edit,
+        'can_delete': can_delete,
+        'can_manage_permissions': can_manage_permissions,
+        'effective_permission': effective_permission,
         'is_owner': (document.owner == request.user),
     })
 
@@ -112,12 +117,13 @@ def document_detail_view(request, doc_id):
 def document_edit_view(request, doc_id):
     """
     Modifies document metadata (Name, Description, Category).
-    Strictly restricted to the document owner.
+    Restricted to Document Owner or users with explicit EDIT permission.
     """
     document = get_object_or_404(Document, pk=doc_id)
 
-    if document.owner != request.user and not request.user.is_superuser:
-        raise PermissionDenied("Access denied: Only the document owner can edit document metadata.")
+    # Server-side authorization check via PermissionService
+    if not PermissionService.can_edit(request.user, document):
+        raise PermissionDenied("Access denied: You do not have permission to edit this document.")
 
     if request.method == 'POST':
         form = DocumentMetadataEditForm(request.POST, instance=document)
@@ -145,11 +151,12 @@ def document_edit_view(request, doc_id):
 def document_delete_view(request, doc_id):
     """
     Deletes a document and safely cleans up its physical storage file.
-    Strictly restricted to the document owner.
+    Strictly restricted to the Document Owner.
     """
     document = get_object_or_404(Document, pk=doc_id)
 
-    if document.owner != request.user and not request.user.is_superuser:
+    # Server-side authorization check via PermissionService
+    if not PermissionService.can_delete(request.user, document):
         raise PermissionDenied("Access denied: Only the document owner can delete this document.")
 
     name = document.name
