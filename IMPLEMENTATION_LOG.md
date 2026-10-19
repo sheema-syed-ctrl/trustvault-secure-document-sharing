@@ -51,3 +51,19 @@
 - Enforced strict administrator trust boundary: administrators do NOT receive arbitrary access to private document contents unless explicitly authorized as owner or grantee.
 - Automated test count: 71 passing (25 in permissions, 16 in documents, 24 in accounts, 6 in core).
 - Produced `PHASE_04_VERIFICATION_REPORT.md` (Decision: VERIFIED).
+
+### [2026-10-19 12:45] Phase 04 Additional Security Review — Admin Boundary & Deletion Consistency
+- Conducted deep security audit on Django Admin permission escalation vectors and file deletion consistency.
+- Remediated Admin Privilege Escalation:
+  - Configured `DocumentPermissionAdmin` with `has_add_permission=False`, `has_change_permission=False`, `has_delete_permission=False`, and all fields read-only.
+  - Configured `DocumentAdmin` with `has_add_permission=False`, `has_change_permission=False`, `has_delete_permission=False`, and all fields read-only.
+- Added Model-Level Grantor Validation:
+  - Enhanced `DocumentPermission.clean()` to enforce that `granted_by` must equal `document.owner`, prohibiting non-owner or admin permission grants via ORM.
+- Remediated Deletion Consistency & Dual-State Failure Modes:
+  - Refactored `DocumentService.delete_document()` to use `transaction.on_commit()` for physical file purging.
+  - Ensured physical file preservation on transaction rollback and added critical structured logging for post-commit disk cleanup failures.
+- Expanded Automated Test Suite:
+  - Added 5 new targeted security tests in `permissions/tests.py` (admin add/edit/delete blocking, grantor validation).
+  - Added 3 new dual-state tests in `documents/tests.py` (rollback preservation, missing file resilience, OSError handling).
+- Automated test count: 79 passing (30 in permissions, 19 in documents, 24 in accounts, 6 in core).
+- Produced `PHASE_04_ADDITIONAL_SECURITY_REVIEW.md`.

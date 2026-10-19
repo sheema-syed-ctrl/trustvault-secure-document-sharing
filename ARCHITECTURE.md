@@ -87,3 +87,16 @@ TrustVault is built as a highly modular monolith following the principle of leas
   5. *Strict Administrator Trust Boundary:* Administrators do **not** inherit document access by virtue of their role. An administrator can access a document only if they are the document owner or have an explicit `DocumentPermission`.
   6. *Default-Deny Policy:* Any user without an active, explicit permission or ownership grant is denied (HTTP 403). Anonymous access is strictly prohibited.
 - **Centralized Evaluation:** All document views route authorization through `permissions.services.PermissionService` (`can_read`, `can_edit`, `can_delete`, `can_manage_permissions`, `get_accessible_documents`). Client-side UI controls never serve as security boundaries.
+
+### 7. Security Hardening & Administrative Boundary Review (Phase 04 Audit)
+- **Django Admin Escalation Protection:**
+  - `DocumentPermissionAdmin` and `DocumentAdmin` explicitly disable write permissions (`has_add_permission=False`, `has_change_permission=False`, `has_delete_permission=False`) and designate all model fields as read-only.
+  - Closes administrative backdoors where staff or superusers could use Django Admin to grant themselves access, alter user permissions, or reassign document owners.
+- **Model Grantor Integrity Validation:**
+  - `DocumentPermission.clean()` enforces that if `granted_by` is specified, it must strictly match `document.owner`.
+  - Blocks any non-owner or administrator from creating permissions at the ORM layer without owner authorization.
+- **Dual-State Deletion Consistency:**
+  - `DocumentService.delete_document()` guarantees database atomicity and triggers physical file removal only after successful transaction commit via `transaction.on_commit()`.
+  - Rollback safety: If database deletion fails or rolls back, the physical file on disk is preserved, preventing irreversible data loss.
+  - Failure logging: Post-commit physical disk removal failures are captured in structured critical logs for administrative auditing without rolling back committed database state.
+

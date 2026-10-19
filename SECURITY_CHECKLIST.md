@@ -44,6 +44,9 @@ This living checklist tracks application security controls, verification evidenc
 | **EDIT User Isolation** | Verified | EDIT grantees can view and modify metadata. They cannot delete documents or manage permissions. |
 | **Deletion Exclusivity** | Verified | Only the document owner can delete documents. |
 | **Administrator Trust Boundary** | Verified | Administrators do **not** inherit access to private document contents. Tested in `permissions.tests`. |
+| **Admin Panel Privilege Escalation Defense** | Verified | `DocumentPermissionAdmin` and `DocumentAdmin` set `has_add_permission=False`, `has_change_permission=False`, `has_delete_permission=False`. Admins cannot create permissions, modify permissions, or reassign document owners via Django Admin. |
+| **Model-Level Grantor Validation** | Verified | `DocumentPermission.clean()` validates that `granted_by == document.owner`, preventing non-owners or admins from issuing unauthorized grants. |
+| **Dual-State Deletion Consistency** | Verified | `DocumentService.delete_document()` guarantees database atomicity and triggers disk file removal via `transaction.on_commit()`, preventing file loss on DB rollback. |
 | **IDOR & Parameter Tampering** | Verified | Changing document UUID/ID in URL does not bypass server-side checks. Metadata forms reject ownership changes. |
 | **Cross-Owner Isolation** | Verified | Owner A cannot view, edit, or delete Owner B's documents. Verified across all document endpoints. |
 
