@@ -560,3 +560,624 @@ class DocumentPermissionEngineTests(TestCase):
         res_delete = self.client.post(f'/admin/documents/document/{self.alice_doc.id}/delete/', {'post': 'yes'})
         self.assertEqual(res_delete.status_code, 403)
         self.assertTrue(Document.objects.filter(pk=self.alice_doc.id).exists())
+
+
+class DocumentSharingWorkflowTests(TestCase):
+    """
+    Automated security and functional test suite for Phase 06:
+    Document Sharing & Access Revocation Engine.
+    Covers:
+      - Sharing workflow (owner grants READ/EDIT, validations, self-sharing, invalid users).
+      - Permission updates (READ <-> EDIT, cross-document IDOR defense, unauthorized attempts).
+      - Revocation workflow (owner revokes, method enforcement, CSRF, immediate access cutoff).
+      - User lookup security (owner-only access, exclusion of inactive users and self, bounded results, no sensitive fields).
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.password = "SharingSecret123!@#"
+
+        self.owner_alice = User.objects.create_user(
+            username='share_alice',
+            email='alice@share.local',
+            password=self.password,
+            role=User.Role.OWNER
+        )
+
+        self.owner_bob = User.objects.create_user(
+            username='share_bob',
+            email='bob@share.local',
+            password=self.password,
+            role=User.Role.OWNER
+        )
+
+        self.viewer_charlie = User.objects.create_user(
+            username='share_charlie',
+            email='charlie@share.local',
+            password=self.password,
+            role=User.Role.VIEWER
+        )
+
+        self.viewer_david = User.objects.create_user(
+            username='share_david',
+            email='david@share.local',
+            password=self.password,
+            role=User.Role.VIEWER
+        )
+
+        self.viewer_inactive = User.objects.create_user(
+            username='share_inactive',
+            email='inactive@share.local',
+            password=self.password,
+            role=User.Role.VIEWER,
+            is_active=False
+        )
+
+        self.admin_eve = User.objects.create_user(
+            username='share_eve',
+            email='eve@share.local',
+            password=self.password,
+            role=User.Role.ADMIN,
+            is_staff=True
+        )
+
+        pdf_bytes = b"%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\nxref\ntrailer\nstartxref\n%%EOF"
+        self.alice_doc = DocumentService.upload_document(
+            owner=self.owner_alice,
+            uploaded_file=SimpleUploadedFile("alice_vault.pdf", pdf_bytes, content_type="application/pdf"),
+            name="Alice Strategy Paper",
+            description="Alice's confidential strategic document.",
+            category=DocumentCategory.FINANCIAL
+        )
+
+        self.bob_doc = DocumentService.upload_document(
+            owner=self.owner_bob,
+            uploaded_file=SimpleUploadedFile("bob_vault.pdf", pdf_bytes, content_type="application/pdf"),
+            name="Bob Blueprint",
+            description="Bob's technical blueprint.",
+            category=DocumentCategory.TECHNICAL
+        )
+
+        self.created_files = [
+            DocumentService.get_protected_storage_path(self.alice_doc.storage_filename),
+            DocumentService.get_protected_storage_path(self.bob_doc.storage_filename),
+        ]
+
+    def tearDown(self):
+        for path in self.created_files:
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+
+    # -------------------------------------------------------------------------
+    # 1. Sharing Workflow
+    # -------------------------------------------------------------------------
+    def test_01_owner_can_grant_read_permission(self):
+        """1. Document owner can grant READ access."""
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:manage', args=[self.alice_doc.id])
+        res = self.client.post(url, {
+            'recipient_username': 'share_charlie',
+            'permission_type': PermissionType.READ,
+        })
+        self.assertEqual(res.status_code, 302)
+        self.assertRedirects(res, url)
+        self.assertTrue(
+            DocumentPermission.objects.filter(
+                document=self.alice_doc,
+                user=self.viewer_charlie,
+                permission_type=PermissionType.READ,
+                granted_by=self.owner_alice
+            ).exists()
+        )
+
+    def test_02_owner_can_grant_edit_permission(self):
+        """2. Document owner can grant EDIT access."""
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:manage', args=[self.alice_doc.id])
+        res = self.client.post(url, {
+            'recipient_username': 'share_david',
+            'permission_type': PermissionType.EDIT,
+        })
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(
+            DocumentPermission.objects.filter(
+                document=self.alice_doc,
+                user=self.viewer_david,
+                permission_type=PermissionType.EDIT,
+                granted_by=self.owner_alice
+            ).exists()
+        )
+
+    def test_03_unauthorized_owner_cannot_share_another_owners_document(self):
+        """3. Unauthorized owner cannot share another owner's document."""
+        self.client.login(username='share_bob', password=self.password)
+        url = reverse('permissions:manage', args=[self.alice_doc.id])
+        res = self.client.post(url, {
+            'recipient_username': 'share_charlie',
+            'permission_type': PermissionType.READ,
+        })
+        self.assertEqual(res.status_code, 403)
+        self.assertFalse(DocumentPermission.objects.filter(document=self.alice_doc, user=self.viewer_charlie).exists())
+
+    def test_04_viewer_cannot_share_documents(self):
+        """4. Viewer cannot share documents."""
+        self.client.login(username='share_charlie', password=self.password)
+        url = reverse('permissions:manage', args=[self.alice_doc.id])
+        res = self.client.post(url, {
+            'recipient_username': 'share_david',
+            'permission_type': PermissionType.READ,
+        })
+        self.assertEqual(res.status_code, 403)
+
+    def test_05_administrator_cannot_bypass_owner_restrictions(self):
+        """5. Administrator cannot bypass owner restrictions to share document."""
+        self.client.login(username='share_eve', password=self.password)
+        url = reverse('permissions:manage', args=[self.alice_doc.id])
+        res = self.client.post(url, {
+            'recipient_username': 'share_charlie',
+            'permission_type': PermissionType.READ,
+        })
+        self.assertEqual(res.status_code, 403)
+        self.assertFalse(DocumentPermission.objects.filter(document=self.alice_doc, user=self.viewer_charlie).exists())
+
+    def test_06_user_cannot_share_document_with_themselves(self):
+        """6. User cannot share a document with themselves."""
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:manage', args=[self.alice_doc.id])
+        res = self.client.post(url, {
+            'recipient_username': 'share_alice',
+            'permission_type': PermissionType.READ,
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "You cannot share a document with yourself.")
+        self.assertFalse(DocumentPermission.objects.filter(document=self.alice_doc, user=self.owner_alice).exists())
+
+    def test_07_nonexistent_recipient_is_rejected(self):
+        """7. Nonexistent recipient is rejected."""
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:manage', args=[self.alice_doc.id])
+        res = self.client.post(url, {
+            'recipient_username': 'nonexistent_ghost_user',
+            'permission_type': PermissionType.READ,
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "does not exist")
+
+    def test_08_inactive_recipient_is_rejected(self):
+        """8. Inactive recipient is rejected."""
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:manage', args=[self.alice_doc.id])
+        res = self.client.post(url, {
+            'recipient_username': 'share_inactive',
+            'permission_type': PermissionType.READ,
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "is inactive")
+        self.assertFalse(DocumentPermission.objects.filter(document=self.alice_doc, user=self.viewer_inactive).exists())
+
+    def test_09_invalid_permission_level_is_rejected(self):
+        """9. Invalid permission level is rejected."""
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:manage', args=[self.alice_doc.id])
+        res = self.client.post(url, {
+            'recipient_username': 'share_charlie',
+            'permission_type': 'SUPER_ADMIN_INVALID',
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertFalse(DocumentPermission.objects.filter(document=self.alice_doc, user=self.viewer_charlie).exists())
+
+    def test_10_duplicate_sharing_handled_safely(self):
+        """10. Duplicate sharing is handled safely (updates or preserves record)."""
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:manage', args=[self.alice_doc.id])
+
+        # First grant
+        res1 = self.client.post(url, {
+            'recipient_username': 'share_charlie',
+            'permission_type': PermissionType.READ,
+        })
+        self.assertEqual(res1.status_code, 302)
+
+        # Second grant with same permission
+        res2 = self.client.post(url, {
+            'recipient_username': 'share_charlie',
+            'permission_type': PermissionType.READ,
+        })
+        self.assertEqual(res2.status_code, 302)
+
+        # Exactly 1 permission record exists
+        self.assertEqual(DocumentPermission.objects.filter(document=self.alice_doc, user=self.viewer_charlie).count(), 1)
+
+    def test_11_recipient_cannot_be_assigned_permissions_through_manipulated_request_fields(self):
+        """11. Recipient cannot be assigned permissions through manipulated request fields."""
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:manage', args=[self.alice_doc.id])
+
+        # Attempt to tamper with granted_by and target document
+        res = self.client.post(url, {
+            'recipient_username': 'share_charlie',
+            'permission_type': PermissionType.READ,
+            'granted_by': self.owner_bob.id,
+            'document': self.bob_doc.id,
+        })
+        self.assertEqual(res.status_code, 302)
+
+        perm = DocumentPermission.objects.get(document=self.alice_doc, user=self.viewer_charlie)
+        # Server forces granted_by to alice and document to alice_doc
+        self.assertEqual(perm.granted_by, self.owner_alice)
+        self.assertEqual(perm.document, self.alice_doc)
+
+    # -------------------------------------------------------------------------
+    # 2. Permission Updates
+    # -------------------------------------------------------------------------
+    def test_12_owner_can_change_read_to_edit(self):
+        """12. Owner can change READ to EDIT."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:update', args=[self.alice_doc.id, perm.id])
+        res = self.client.post(url, {'permission_type': PermissionType.EDIT})
+        self.assertEqual(res.status_code, 302)
+
+        perm.refresh_from_db()
+        self.assertEqual(perm.permission_type, PermissionType.EDIT)
+
+    def test_13_owner_can_change_edit_to_read(self):
+        """13. Owner can change EDIT to READ."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_david,
+            permission_type=PermissionType.EDIT
+        )
+
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:update', args=[self.alice_doc.id, perm.id])
+        res = self.client.post(url, {'permission_type': PermissionType.READ})
+        self.assertEqual(res.status_code, 302)
+
+        perm.refresh_from_db()
+        self.assertEqual(perm.permission_type, PermissionType.READ)
+
+    def test_14_non_owner_cannot_modify_permissions(self):
+        """14. Non-owner cannot modify permissions."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        self.client.login(username='share_bob', password=self.password)
+        url = reverse('permissions:update', args=[self.alice_doc.id, perm.id])
+        res = self.client.post(url, {'permission_type': PermissionType.EDIT})
+        self.assertEqual(res.status_code, 403)
+
+        perm.refresh_from_db()
+        self.assertEqual(perm.permission_type, PermissionType.READ)
+
+    def test_15_cross_document_permission_id_manipulation_is_rejected(self):
+        """15. Cross-document permission ID manipulation is rejected."""
+        # Charlie has permission on Bob's document
+        bob_perm = PermissionService.grant_permission(
+            actor=self.owner_bob,
+            document=self.bob_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        # Alice logs in and attempts to update Bob's permission ID via Alice's document route
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:update', args=[self.alice_doc.id, bob_perm.id])
+        res = self.client.post(url, {'permission_type': PermissionType.EDIT})
+        self.assertEqual(res.status_code, 403)
+
+        bob_perm.refresh_from_db()
+        self.assertEqual(bob_perm.permission_type, PermissionType.READ)
+
+    def test_16_unauthorized_role_cannot_update_permissions(self):
+        """16. Unauthorized role (Viewer, Admin) cannot update permissions."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        url = reverse('permissions:update', args=[self.alice_doc.id, perm.id])
+
+        # Viewer attempt
+        self.client.login(username='share_charlie', password=self.password)
+        res_v = self.client.post(url, {'permission_type': PermissionType.EDIT})
+        self.assertEqual(res_v.status_code, 403)
+
+        # Admin attempt
+        self.client.login(username='share_eve', password=self.password)
+        res_a = self.client.post(url, {'permission_type': PermissionType.EDIT})
+        self.assertEqual(res_a.status_code, 403)
+
+    # -------------------------------------------------------------------------
+    # 3. Revocation Workflow
+    # -------------------------------------------------------------------------
+    def test_17_owner_can_revoke_access(self):
+        """17. Owner can revoke access."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:revoke', args=[self.alice_doc.id, perm.id])
+        res = self.client.post(url)
+        self.assertEqual(res.status_code, 302)
+        self.assertFalse(DocumentPermission.objects.filter(pk=perm.id).exists())
+
+    def test_18_non_owner_cannot_revoke_access(self):
+        """18. Non-owner cannot revoke access."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        self.client.login(username='share_bob', password=self.password)
+        url = reverse('permissions:revoke', args=[self.alice_doc.id, perm.id])
+        res = self.client.post(url)
+        self.assertEqual(res.status_code, 403)
+        self.assertTrue(DocumentPermission.objects.filter(pk=perm.id).exists())
+
+    def test_19_revocation_uses_post(self):
+        """19. Revocation uses POST; GET returns 405 Method Not Allowed."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:revoke', args=[self.alice_doc.id, perm.id])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 405)
+        self.assertTrue(DocumentPermission.objects.filter(pk=perm.id).exists())
+
+    def test_20_get_requests_cannot_mutate_permissions(self):
+        """20. GET requests cannot mutate permissions."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        self.client.login(username='share_alice', password=self.password)
+
+        # GET on grant endpoint returns 405
+        res_grant = self.client.get(reverse('permissions:grant', args=[self.alice_doc.id]))
+        self.assertEqual(res_grant.status_code, 405)
+
+        # GET on update endpoint returns 405
+        res_update = self.client.get(reverse('permissions:update', args=[self.alice_doc.id, perm.id]))
+        self.assertEqual(res_update.status_code, 405)
+
+        # GET on revoke endpoint returns 405
+        res_revoke = self.client.get(reverse('permissions:revoke', args=[self.alice_doc.id, perm.id]))
+        self.assertEqual(res_revoke.status_code, 405)
+
+        perm.refresh_from_db()
+        self.assertEqual(perm.permission_type, PermissionType.READ)
+
+    def test_21_csrf_protection_remains_enabled(self):
+        """21. CSRF protection remains enabled for state-changing permission endpoints."""
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.login(username='share_alice', password=self.password)
+
+        # POST without CSRF token to grant endpoint fails with 403
+        res = csrf_client.post(
+            reverse('permissions:manage', args=[self.alice_doc.id]),
+            {'recipient_username': 'share_charlie', 'permission_type': PermissionType.READ}
+        )
+        self.assertEqual(res.status_code, 403)
+
+    def test_22_revoked_read_user_cannot_access_the_document(self):
+        """22. Revoked READ user immediately loses document access."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        # Charlie accesses document successfully
+        self.client.login(username='share_charlie', password=self.password)
+        res_detail = self.client.get(reverse('documents:detail', args=[self.alice_doc.id]))
+        self.assertEqual(res_detail.status_code, 200)
+
+        # Alice revokes permission
+        PermissionService.revoke_permission_by_id(self.owner_alice, self.alice_doc, perm.id)
+
+        # Charlie attempts access again immediately
+        res_detail_revoked = self.client.get(reverse('documents:detail', args=[self.alice_doc.id]))
+        self.assertEqual(res_detail_revoked.status_code, 403)
+
+        res_download_revoked = self.client.get(reverse('documents:download', args=[self.alice_doc.id]))
+        self.assertEqual(res_download_revoked.status_code, 403)
+
+    def test_23_revoked_edit_user_cannot_edit_or_download(self):
+        """23. Revoked EDIT user cannot edit or download."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_david,
+            permission_type=PermissionType.EDIT
+        )
+
+        # Alice revokes David's permission
+        PermissionService.revoke_permission_by_id(self.owner_alice, self.alice_doc, perm.id)
+
+        self.client.login(username='share_david', password=self.password)
+
+        # Edit blocked
+        res_edit = self.client.post(reverse('documents:edit', args=[self.alice_doc.id]), {
+            'name': 'Hacked Document Title',
+            'category': DocumentCategory.LEGAL,
+        })
+        self.assertEqual(res_edit.status_code, 403)
+
+        # Download blocked
+        res_download = self.client.get(reverse('documents:download', args=[self.alice_doc.id]))
+        self.assertEqual(res_download.status_code, 403)
+
+    def test_24_revocation_does_not_delete_the_underlying_document(self):
+        """24. Revocation does not delete the underlying document or storage file."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:revoke', args=[self.alice_doc.id, perm.id])
+        res = self.client.post(url)
+        self.assertEqual(res.status_code, 302)
+
+        # Underlying document record is intact
+        self.assertTrue(Document.objects.filter(pk=self.alice_doc.id).exists())
+
+        # Physical file still exists
+        storage_path = DocumentService.get_protected_storage_path(self.alice_doc.storage_filename)
+        self.assertTrue(storage_path.exists())
+
+    def test_25_repeated_revocation_is_handled_safely(self):
+        """25. Repeated revocation is handled safely without error."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:revoke', args=[self.alice_doc.id, perm.id])
+
+        # First revocation
+        res1 = self.client.post(url)
+        self.assertEqual(res1.status_code, 302)
+
+        # Second revocation of already-deleted permission
+        res2 = self.client.post(url)
+        self.assertEqual(res2.status_code, 302)
+
+    # -------------------------------------------------------------------------
+    # 4. User Lookup Security
+    # -------------------------------------------------------------------------
+    def test_26_anonymous_user_cannot_search_recipients(self):
+        """26. Anonymous user cannot search recipients."""
+        url = reverse('permissions:user_search', args=[self.alice_doc.id])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(res.url.startswith(reverse('accounts:login')))
+
+    def test_27_viewer_cannot_access_owner_only_lookup(self):
+        """27. Viewer cannot access owner-only lookup."""
+        self.client.login(username='share_charlie', password=self.password)
+        url = reverse('permissions:user_search', args=[self.alice_doc.id])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 403)
+
+    def test_28_administrator_cannot_use_lookup_to_bypass_document_access_controls(self):
+        """28. Administrator cannot use lookup to bypass document access controls."""
+        self.client.login(username='share_eve', password=self.password)
+        url = reverse('permissions:user_search', args=[self.alice_doc.id])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 403)
+
+    def test_29_inactive_accounts_are_excluded_from_lookup(self):
+        """29. Inactive accounts are excluded from lookup results."""
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:user_search', args=[self.alice_doc.id]) + '?q=share_'
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+
+        data = res.json()
+        usernames = [u['username'] for u in data['results']]
+        self.assertNotIn('share_inactive', usernames)
+        self.assertNotIn('share_alice', usernames)  # Owner excluded from sharing with self
+
+    def test_30_sensitive_account_fields_are_not_returned(self):
+        """30. Sensitive account fields are not returned in lookup API."""
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:user_search', args=[self.alice_doc.id])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+
+        data = res.json()
+        self.assertTrue(len(data['results']) > 0)
+        for user_entry in data['results']:
+            # Permitted safe fields only
+            self.assertIn('id', user_entry)
+            self.assertIn('username', user_entry)
+            self.assertIn('role', user_entry)
+            # Sensitive fields strictly absent
+            self.assertNotIn('password', user_entry)
+            self.assertNotIn('email', user_entry)
+            self.assertNotIn('is_superuser', user_entry)
+            self.assertNotIn('is_staff', user_entry)
+
+    def test_31_search_result_count_is_bounded(self):
+        """31. Search result count is bounded to prevent massive user enumeration."""
+        # Create 25 additional active viewer accounts
+        bulk_users = [
+            User(username=f'bulk_viewer_{i}', email=f'bulk_{i}@test.local', role=User.Role.VIEWER)
+            for i in range(25)
+        ]
+        User.objects.bulk_create(bulk_users)
+
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:user_search', args=[self.alice_doc.id]) + '?q=bulk_'
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+
+        data = res.json()
+        # Bound limit is 20
+        self.assertLessEqual(len(data['results']), 20)
+
+    # -------------------------------------------------------------------------
+    # 5. Routing and UI Navigation Tests
+    # -------------------------------------------------------------------------
+    def test_32_document_share_redirect_view_routes_to_permissions_manage(self):
+        """32. Document share convenience route redirects to permissions:manage."""
+        self.client.login(username='share_alice', password=self.password)
+        res = self.client.get(reverse('documents:share', args=[self.alice_doc.id]))
+        self.assertEqual(res.status_code, 302)
+        self.assertRedirects(res, reverse('permissions:manage', args=[self.alice_doc.id]))
+
+    def test_33_manage_page_renders_active_permissions_and_share_form(self):
+        """33. Manage permissions page renders active permissions, UI actions, and share form."""
+        PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        self.client.login(username='share_alice', password=self.password)
+        res = self.client.get(reverse('permissions:manage', args=[self.alice_doc.id]))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Alice Strategy Paper")
+        self.assertContains(res, "share_charlie")
+        self.assertContains(res, "READ")
+        self.assertContains(res, "Grant Access to a User")
+
