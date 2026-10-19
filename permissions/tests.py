@@ -979,16 +979,66 @@ class DocumentSharingWorkflowTests(TestCase):
         self.assertEqual(perm.permission_type, PermissionType.READ)
 
     def test_21_csrf_protection_remains_enabled(self):
-        """21. CSRF protection remains enabled for state-changing permission endpoints."""
+        """21. CSRF protection remains enabled: missing tokens rejected across all mutation endpoints; valid tokens accepted."""
+        # Existing permission for update/revoke testing
+        existing_perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_david,
+            permission_type=PermissionType.READ
+        )
+
         csrf_client = Client(enforce_csrf_checks=True)
         csrf_client.login(username='share_alice', password=self.password)
 
-        # POST without CSRF token to grant endpoint fails with 403
-        res = csrf_client.post(
+        # 1. POST without CSRF token to manage endpoint fails with 403
+        res_manage = csrf_client.post(
             reverse('permissions:manage', args=[self.alice_doc.id]),
             {'recipient_username': 'share_charlie', 'permission_type': PermissionType.READ}
         )
-        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res_manage.status_code, 403)
+
+        # 2. POST without CSRF token to direct grant endpoint fails with 403
+        res_grant = csrf_client.post(
+            reverse('permissions:grant', args=[self.alice_doc.id]),
+            {'recipient_username': 'share_charlie', 'permission_type': PermissionType.READ}
+        )
+        self.assertEqual(res_grant.status_code, 403)
+
+        # 3. POST without CSRF token to update endpoint fails with 403
+        res_update = csrf_client.post(
+            reverse('permissions:update', args=[self.alice_doc.id, existing_perm.id]),
+            {'permission_type': PermissionType.EDIT}
+        )
+        self.assertEqual(res_update.status_code, 403)
+
+        # 4. POST without CSRF token to revoke endpoint fails with 403
+        res_revoke = csrf_client.post(
+            reverse('permissions:revoke', args=[self.alice_doc.id, existing_perm.id])
+        )
+        self.assertEqual(res_revoke.status_code, 403)
+
+        # 5. Round-trip verification: obtain valid CSRF token from GET and confirm POST succeeds
+        get_res = csrf_client.get(reverse('permissions:manage', args=[self.alice_doc.id]))
+        self.assertEqual(get_res.status_code, 200)
+        csrf_token = get_res.cookies['csrftoken'].value
+
+        res_valid = csrf_client.post(
+            reverse('permissions:grant', args=[self.alice_doc.id]),
+            {
+                'csrfmiddlewaretoken': csrf_token,
+                'recipient_username': 'share_charlie',
+                'permission_type': PermissionType.READ
+            }
+        )
+        self.assertEqual(res_valid.status_code, 302)
+        self.assertTrue(
+            DocumentPermission.objects.filter(
+                document=self.alice_doc,
+                user=self.viewer_charlie,
+                permission_type=PermissionType.READ
+            ).exists()
+        )
 
     def test_22_revoked_read_user_cannot_access_the_document(self):
         """22. Revoked READ user immediately loses document access."""
@@ -1180,4 +1230,107 @@ class DocumentSharingWorkflowTests(TestCase):
         self.assertContains(res, "share_charlie")
         self.assertContains(res, "READ")
         self.assertContains(res, "Grant Access to a User")
+
+    # -------------------------------------------------------------------------
+    # 6. Additional Security Acceptance & Mutation Integrity Tests
+    # -------------------------------------------------------------------------
+    def test_34_permission_update_cannot_transfer_to_another_user(self):
+        """34. Injected POST parameters attempting to transfer permission to another user are ignored."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        self.client.login(username='share_alice', password=self.password)
+        url = reverse('permissions:update', args=[self.alice_doc.id, perm.id])
+
+        # Attempt to inject recipient transfer fields in POST body
+        res = self.client.post(url, {
+            'permission_type': PermissionType.EDIT,
+            'user': self.viewer_david.pk,
+            'user_id': self.viewer_david.pk,
+            'recipient_username': 'share_david',
+        })
+        self.assertEqual(res.status_code, 302)
+
+        # Refresh permission from database
+        perm.refresh_from_db()
+        # Verify permission type was changed to EDIT, but user remains strictly Charlie
+        self.assertEqual(perm.permission_type, PermissionType.EDIT)
+        self.assertEqual(perm.user_id, self.viewer_charlie.pk)
+        self.assertEqual(perm.user.username, 'share_charlie')
+        # David must have zero permissions
+        self.assertFalse(DocumentPermission.objects.filter(document=self.alice_doc, user=self.viewer_david).exists())
+
+    def test_35_document_permission_full_clean_on_save(self):
+        """35. DocumentPermission.save() enforces full_clean(), blocking invalid types, self-grants, and illegal grantors."""
+        # A. Invalid permission type fails model validation
+        invalid_perm = DocumentPermission(
+            document=self.alice_doc,
+            user=self.viewer_charlie,
+            permission_type='SUPER_ADMIN',
+            granted_by=self.owner_alice
+        )
+        with self.assertRaises(ValidationError):
+            invalid_perm.save()
+
+        # B. Self-grant to document owner fails model validation
+        self_grant = DocumentPermission(
+            document=self.alice_doc,
+            user=self.owner_alice,
+            permission_type=PermissionType.READ,
+            granted_by=self.owner_alice
+        )
+        with self.assertRaises(ValidationError):
+            self_grant.save()
+
+        # C. Grantor other than document owner fails model validation
+        illegal_grantor = DocumentPermission(
+            document=self.alice_doc,
+            user=self.viewer_charlie,
+            permission_type=PermissionType.READ,
+            granted_by=self.owner_bob
+        )
+        with self.assertRaises(ValidationError):
+            illegal_grantor.save()
+
+    def test_36_immediate_revocation_stale_cache_resistance(self):
+        """36. Immediate revocation prevents any subsequent reads, downloads, or edits without stale cache leak."""
+        perm = PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+        # Charlie establishes active session and accesses document detail and file download
+        self.client.login(username='share_charlie', password=self.password)
+        res_detail = self.client.get(reverse('documents:detail', args=[self.alice_doc.id]))
+        self.assertEqual(res_detail.status_code, 200)
+
+        res_dl = self.client.get(reverse('documents:download', args=[self.alice_doc.id]))
+        self.assertEqual(res_dl.status_code, 200)
+
+        # Alice immediately revokes permission
+        PermissionService.revoke_permission_by_id(
+            actor=self.owner_alice,
+            document=self.alice_doc,
+            permission_id=perm.id
+        )
+
+        # Charlie attempts immediate subsequent requests within the same active session
+        res_detail_after = self.client.get(reverse('documents:detail', args=[self.alice_doc.id]))
+        self.assertEqual(res_detail_after.status_code, 403)
+
+        res_dl_after = self.client.get(reverse('documents:download', args=[self.alice_doc.id]))
+        self.assertEqual(res_dl_after.status_code, 403)
+
+        res_edit_after = self.client.post(reverse('documents:edit', args=[self.alice_doc.id]), {
+            'name': 'Tampered Metadata',
+            'category': DocumentCategory.TECHNICAL
+        })
+        self.assertEqual(res_edit_after.status_code, 403)
+
 
