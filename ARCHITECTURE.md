@@ -73,3 +73,17 @@ TrustVault is built as a highly modular monolith following the principle of leas
   - Deletion via `DocumentService.delete_document()` destroys both the database record and physical disk file safely.
 - **Cross-Owner Object Isolation:**
   - Document owners can manage only their own documents. Viewers and cross-owners attempting direct access to detail, edit, or delete endpoints receive HTTP 403 `PermissionDenied`.
+
+### 6. Document Permission Engine & Centralized Authorization (Phase 04)
+- **Granular Object-Level Access Model:** Implemented `DocumentPermission` in `permissions/models.py`.
+  - Links a target `Document` to a registered `User` with explicit `permission_type` (`READ` or `EDIT`).
+  - Database-level `UniqueConstraint(fields=['document', 'user'])` prevents duplicate permission assignments.
+  - Owners cannot have redundant permission records; document ownership inherently supersedes assigned grants.
+- **Permission Precedence & Semantics:**
+  1. *Ownership Authority:* Document Owner retains full rights (`can_read`, `can_edit`, `can_delete`, `can_manage_permissions`).
+  2. *EDIT Hierarchy:* `EDIT` permission strictly includes `READ` capabilities.
+  3. *READ Boundary:* `READ` permission grants read-only access to document metadata and detail view. It does not allow edit or delete.
+  4. *Deletion & Permission Management Isolation:* Only the Document Owner can delete a document or manage permissions. Neither `EDIT` nor `READ` grantees have deletion or management authority.
+  5. *Strict Administrator Trust Boundary:* Administrators do **not** inherit document access by virtue of their role. An administrator can access a document only if they are the document owner or have an explicit `DocumentPermission`.
+  6. *Default-Deny Policy:* Any user without an active, explicit permission or ownership grant is denied (HTTP 403). Anonymous access is strictly prohibited.
+- **Centralized Evaluation:** All document views route authorization through `permissions.services.PermissionService` (`can_read`, `can_edit`, `can_delete`, `can_manage_permissions`, `get_accessible_documents`). Client-side UI controls never serve as security boundaries.
