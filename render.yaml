@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: trustvault
+    env: python
+    region: oregon
+    plan: standard
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn trustvault.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --log-file -"
+    healthCheckPath: "/health/"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.7
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com,localhost,127.0.0.1"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://*.onrender.com"
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+      - key: CSRF_COOKIE_SECURE
+        value: "True"
+      - key: SECURE_PROXY_SSL_HEADER
+        value: "True"
+      - key: SECURE_HSTS_SECONDS
+        value: "31536000"
+      - key: SECURE_HSTS_INCLUDE_SUBDOMAINS
+        value: "True"
+      - key: SECURE_HSTS_PRELOAD
+        value: "True"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trustvault-postgres
+          property: connectionString
+
+databases:
+  - name: trustvault-postgres
+    region: oregon
+    plan: standard
+    databaseName: trustvault_prod
+    user: trustvault_admin

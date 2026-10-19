@@ -236,3 +236,63 @@
 - Accelerated test execution via `@override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])` on `BaseDashboardTestCase`.
 - Automated test count: **233 passing tests (100% success rate)** across all test suites (Django: 233/233, pytest: 233/233).
 - Verification checks: `manage.py check` (0 issues), `makemigrations --check` (clean), `migrate --check` (clean), `git diff --check` (clean).
+
+### Phase 10 — Security Testing & STRIDE Threat Model (19 October 2026)
+- Installed and configured automated security audit tools: `bandit 1.9.4` and `pip-audit 2.10.1`.
+- Executed dependency vulnerability audit via `pip-audit`: **0 known vulnerabilities found**.
+- Executed static code security analysis via `bandit`: **0 High, 0 Medium, 0 Low security issues** across application code.
+- Cleaned code smells and false positives:
+  - Fixed `documents/views.py:242`: replaced bare `pass` on audit failure with structured `logger.warning`.
+  - Added `# nosec B108` in `audit/services.py:86` on path-redaction pattern list.
+  - Added `# nosec B105` in `trustvault/settings.py:24` on local development fallback secret key.
+- Authored comprehensive STRIDE Threat Model in `THREATS.md`:
+  - 15 threat scenarios categorized across Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, and Elevation of Privilege.
+  - Preconditions, Impact, Likelihood, Severity, Existing/Additional Mitigations, Verification Tests, and Residual Risk. Zero unresolved Critical/High risks.
+- Expanded `SECURITY_CHECKLIST.md` to cover 18 security domains and 48 verified controls (100% PASS) with concrete file, line, and test method references.
+- Implemented comprehensive automated security test suite in `core/test_security.py` (36 tests):
+  - `AuthenticationSecurityTests` (6 tests): Anonymous redirect, credential rejection, POST/CSRF logout enforcement, open redirect defenses, registration role injection block, admin self-protection.
+  - `IDORAndCrossUserIsolationTests` (7 tests): Cross-owner detail, download, edit, delete rejection (403); unassigned viewer rejection; cross-document permission ID manipulation rejection; non-existent ID 404 safety.
+  - `PermissionHierarchySecurityTests` (6 tests): READ grantee restrictions, EDIT grantee restrictions (no delete/share), Administrator denial without explicit permission, immediate access revocation cutoff, inactive user grant rejection, duplicate permission idempotency.
+  - `FileValidationAndStorageSecurityTests` (6 tests): Disallowed extensions (.exe, .sh, .py), magic-byte signature spoofing detection, filename path traversal sanitization, Content-Disposition CRLF injection prevention, HEAD request streaming verification, physical file deletion with `captureOnCommitCallbacks`.
+  - `AuditTrailIntegritySecurityTests` (5 tests): Append-only `.save()` validation rejection, deletion `.delete()` validation rejection, deep metadata sanitization (passwords, tokens, drive letters), unauthorized download `SECURITY_ACCESS_DENIED` logging, historical snapshot preservation on document deletion.
+  - `SearchAndDashboardScopingSecurityTests` (2 tests): Document search strictly scoped to accessible items; Admin dashboard download link suppression.
+  - `WebSecurityDefensesTests` (4 tests): Security headers (`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`), CSRF token rejection without token, template HTML escaping for XSS payloads, SQL injection resistance in search.
+- Total test count: **269 passing tests (100% success rate)**.
+- Local Git Commit: `f978edb`.
+
+### Phase 11 — Deployment, Documentation & AI Usage Records (19 October 2026)
+- Production settings hardening in `trustvault/settings.py`:
+  - Integrated `WhiteNoise` static asset streaming middleware (`whitenoise.middleware.WhiteNoiseMiddleware`).
+  - Added `STORAGES` dictionary with `CompressedManifestStaticFilesStorage` for production and `StaticFilesStorage` in development.
+  - Added native `DATABASE_URL` parsing via `dj-database-url` with connection pooling (`conn_max_age=600`, `conn_health_checks=True`).
+  - Added production environment settings: `CSRF_TRUSTED_ORIGINS`, `SECURE_PROXY_SSL_HEADER`, `SECURE_HSTS_SECONDS`, `SECURE_HSTS_INCLUDE_SUBDOMAINS`, `SECURE_HSTS_PRELOAD`.
+  - Configured `STATIC_ROOT.mkdir(parents=True, exist_ok=True)` to prevent WhiteNoise startup warnings.
+- Production Health Check Endpoint:
+  - Implemented `health_check_view` in `core/views.py` and registered `/health/` in `core/urls.py` and `trustvault/urls.py`.
+  - Actively probes database connectivity (`SELECT 1;`) and protected media storage writability via temporary atomic file probes.
+  - Returns `200 OK` with JSON telemetry (`healthy`) or `503 Service Unavailable` (`unhealthy`) when degraded.
+  - Publicly accessible to load balancers, container orchestrators, and monitoring probes without authentication.
+  - Added 4 automated tests in `core/tests.py:HealthCheckEndpointTests` (healthy system, anonymous accessibility, database timeout mock, storage disk read-only mock).
+- Production Deployment Artifacts:
+  - `requirements.txt`: Added `whitenoise>=6.6.0`, `dj-database-url>=2.1.0`, and POSIX `gunicorn>=21.2.0`.
+  - `Procfile`: Gunicorn production WSGI process definition with 3 workers and 120s timeout.
+  - `render.yaml`: Complete Infrastructure-as-Code specification for Render Blueprint deployment (web service, PostgreSQL cluster, environment variable mappings).
+  - `runtime.txt`: Standardized Python runtime declaration (`python-3.13.7`).
+  - `build.sh`: Linux shell build script automating dependency installation, `collectstatic`, and database migrations.
+- Synthetic Demo Data Seeder:
+  - Implemented `accounts/management/commands/seed_demo_data.py`.
+  - Provisions 3 role-specific demo users: `admin_demo` (Administrator), `owner_demo` (Document Owner), `viewer_demo` (Viewer).
+  - Uploads 3 synthetic documents with real binary/text content and MIME validation: Architecture Spec (PDF), Security Audit (PDF), Board Resolution (TXT).
+  - Assigns realistic permissions: READ on Doc 1, EDIT on Doc 2, READ-then-REVOKED on Doc 3.
+  - Logs authorized downloads and simulated access denials in the persistent audit trail.
+  - Fully idempotent; supports `--clean` flag for test/demo resets.
+  - Added automated test in `accounts/tests.py:SeedDemoDataCommandTests`.
+- Documentation Suite Authored:
+  - `PROMPTS.md`: Mandatory AI prompt engineering records documenting 6 major sessions, models used, prompts, and architectural decisions.
+  - `API_DOCUMENTATION.md`: Complete HTTP route directory, authentication parameters, request/response schemas.
+  - `DATABASE_SCHEMA.md`: Relational schema specification and Mermaid ER diagrams for User, Document, Permission, and AuditEvent models.
+  - `SETUP.md`: Developer and evaluator onboarding guide for Windows and Linux.
+  - `DEPLOYMENT.md`: Comprehensive production deployment and operations guide (Render, Railway, Docker, Nginx).
+  - `README.md`: Master project guide covering executive summary, 10-requirement compliance matrix, demo credentials, security model, and testing results.
+  - `PROJECT_STATUS.md`: Updated to Phase 11 verified status.
+- Automated test count: **274 passing tests (100% success rate)**.

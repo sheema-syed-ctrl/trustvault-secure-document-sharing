@@ -54,6 +54,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -87,10 +88,20 @@ WSGI_APPLICATION = 'trustvault.wsgi.application'
 AUTH_USER_MODEL = 'accounts.User'
 
 
-# Database Configuration: SQLite for dev, PostgreSQL-ready for production
+# Database Configuration: SQLite for dev, PostgreSQL/DATABASE_URL ready for production
+DATABASE_URL = os.getenv('DATABASE_URL')
 DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite').lower()
 
-if DB_ENGINE == 'postgresql':
+if DATABASE_URL:
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+elif DB_ENGINE == 'postgresql':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -139,6 +150,17 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT.mkdir(parents=True, exist_ok=True)
+
+# Static Files Storage Configuration (WhiteNoise in production)
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage" if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 
 # PROTECTED FILE STORAGE
@@ -181,10 +203,26 @@ SESSION_SAVE_EVERY_REQUEST = True
 CSRF_COOKIE_HTTPONLY = False  # Allows JS to read token if needed for AJAX, but standard forms use {% csrf_token %}
 CSRF_COOKIE_SAMESITE = 'Lax'
 
+# CSRF Trusted Origins for reverse proxies and PaaS providers (e.g. Render, Railway)
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
+]
+
+# Reverse Proxy SSL Header detection
+if os.getenv('SECURE_PROXY_SSL_HEADER', 'False').lower() in ('true', '1'):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Production SSL flags (default False in local dev, enabled via .env in production)
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1')
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False').lower() in ('true', '1')
 CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False').lower() in ('true', '1')
+
+# HTTP Strict Transport Security (HSTS)
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False').lower() in ('true', '1')
+SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'False').lower() in ('true', '1')
 
 
 # Logging Configuration

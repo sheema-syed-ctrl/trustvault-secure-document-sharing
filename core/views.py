@@ -42,3 +42,61 @@ def server_error_view(request):
         f"500 Internal Server Error on path: {request.path} | IP: {request.META.get('REMOTE_ADDR')}"
     )
     return render(request, 'errors/500.html', status=500)
+
+
+def health_check_view(request):
+    """
+    Production health check probe for load balancers and container orchestrators.
+    Verifies:
+      - Database connectivity via active cursor query.
+      - Protected private storage directory accessibility and writeability.
+    Returns HTTP 200 with JSON payload when all systems pass, or 503 when degraded.
+    """
+    import uuid
+    from pathlib import Path
+    from django.conf import settings
+    from django.db import connection
+    from django.http import JsonResponse
+
+    # 1. Probe database
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1;")
+            cursor.fetchone()
+        db_ok = True
+        db_status = "connected"
+    except Exception as exc:
+        db_ok = False
+        db_status = f"disconnected: {exc}"
+        logger.error(f"Health check database probe failed: {exc}")
+
+    # 2. Probe private storage
+    try:
+        root = Path(settings.PROTECTED_MEDIA_ROOT).resolve()
+        if root.exists() and root.is_dir():
+            probe_path = root / f".health_{uuid.uuid4().hex}.tmp"
+            probe_path.write_text("health probe", encoding="utf-8")
+            if probe_path.exists():
+                probe_path.unlink(missing_ok=True)
+            storage_ok = True
+            storage_status = "accessible"
+        else:
+            storage_ok = False
+            storage_status = "missing_directory"
+    except Exception as exc:
+        storage_ok = False
+        storage_status = f"error: {exc}"
+        logger.error(f"Health check storage probe failed: {exc}")
+
+    is_healthy = db_ok and storage_ok
+    status_code = 200 if is_healthy else 503
+
+    return JsonResponse(
+        {
+            "status": "healthy" if is_healthy else "unhealthy",
+            "database": db_status,
+            "storage": storage_status,
+            "version": "1.0.0",
+        },
+        status=status_code
+    )

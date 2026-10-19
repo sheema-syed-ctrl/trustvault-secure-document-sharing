@@ -57,3 +57,52 @@ class SystemArchitectureTests(TestCase):
         self.assertEqual(settings.X_FRAME_OPTIONS, 'DENY')
         self.assertTrue(settings.SECURE_CONTENT_TYPE_NOSNIFF)
         self.assertTrue(settings.SESSION_COOKIE_HTTPONLY)
+
+
+class HealthCheckEndpointTests(TestCase):
+    """
+    Automated verification for the production /health/ probe.
+    Ensures container orchestrators and load balancers receive accurate system diagnostics.
+    """
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_health_check_healthy_system(self):
+        """GET /health/ returns HTTP 200 with JSON payload when all systems pass."""
+        response = self.client.get('/health/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/json')
+        data = response.json()
+        self.assertEqual(data.get('status'), 'healthy')
+        self.assertEqual(data.get('database'), 'connected')
+        self.assertEqual(data.get('storage'), 'accessible')
+        self.assertEqual(data.get('version'), '1.0.0')
+
+    def test_health_check_accessible_anonymously(self):
+        """Health check endpoint must be publicly accessible to load balancers without authentication."""
+        response = self.client.get('/health/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_health_check_database_failure(self):
+        """GET /health/ returns HTTP 503 when the database probe fails."""
+        from unittest.mock import patch
+        with patch('django.db.connection.cursor') as mock_cursor:
+            mock_cursor.side_effect = Exception("Database connection timeout")
+            response = self.client.get('/health/')
+            self.assertEqual(response.status_code, 503)
+            data = response.json()
+            self.assertEqual(data.get('status'), 'unhealthy')
+            self.assertIn('disconnected', data.get('database', ''))
+
+    def test_health_check_storage_failure(self):
+        """GET /health/ returns HTTP 503 when storage directory is invalid."""
+        from unittest.mock import patch
+        from pathlib import Path
+        with patch.object(Path, 'write_text') as mock_write:
+            mock_write.side_effect = OSError("Disk read-only")
+            response = self.client.get('/health/')
+            self.assertEqual(response.status_code, 503)
+            data = response.json()
+            self.assertEqual(data.get('status'), 'unhealthy')
+            self.assertIn('error', data.get('storage', ''))

@@ -209,6 +209,34 @@ TrustVault is built as a highly modular monolith following the principle of leas
 - **Immediate Revocation Consistency:**
   - Because discovery directly evaluates `PermissionService.get_accessible_documents()`, access revocation immediately excludes documents from subsequent searches and result counts without stale cache lag.
 
+### 12. Role-Specific Dashboards & Admin Monitoring (Phase 09)
+- **Role-Separated Presentation Architectures:**
+  - Single dispatch entrypoint (`/dashboard/`) routes users dynamically based on their role:
+    * `ADMIN`: Dispatched to `admin_dashboard_view` (Platform health, active users, total documents, audit event breakdown, security denials). Document download links are suppressed.
+    * `OWNER`: Dispatched to `owner_dashboard_view` (Owned document inventory, storage volume, active permission shares, document activity timeline).
+    * `VIEWER`: Dispatched to `viewer_dashboard_view` (Shared documents partitioned into READ vs EDIT permissions, recent downloads).
+- **Privacy-Preserving Metric Aggregations:**
+  - Database-level aggregations (`Sum('file_size')`, `Count('id')`) optimize performance without iterating records in Python memory.
+  - Administrative oversight strictly monitors metadata and operational telemetry without eavesdropping on private document content.
 
+### 13. STRIDE Threat Modeling & Security Hardening (Phase 10)
+- **Comprehensive Threat Vector Coverage:**
+  - 15 Threat Scenarios analyzed across all 6 STRIDE pillars (`THREATS.md`).
+  - Zero unmitigated Critical or High residual risks.
+- **Dedicated Security Regression Suite:**
+  - 36 automated security tests (`core/test_security.py`) verifying authentication security, IDOR isolation, permission hierarchy, file validation, storage path traversal, audit immutability, XSS escaping, CSRF enforcement, and SQL injection resistance.
+- **Static Analysis & Dependency Auditing:**
+  - Automated Bandit scanning (`bandit -r . -x "*/tests*,*/test_*"`) achieves 0 High, 0 Medium, 0 Low security issues.
+  - Automated Pip-Audit scanning (`pip-audit`) confirms 0 known supply-chain vulnerabilities.
 
-
+### 14. Production Deployment & Zero-Downtime Health Probes (Phase 11)
+- **Zero-Downtime Health Monitoring:**
+  - Dedicated `/health/` endpoint conducts runtime database connectivity (`SELECT 1;`) and protected storage writeability probes.
+  - Returns `200 OK` with JSON diagnostics when all components are healthy, and `503 Service Unavailable` when degraded.
+  - Unauthenticated access allows automated health checks from load balancers (AWS ALB, Render, Kubernetes).
+- **Production Asset Pipeline (WhiteNoise):**
+  - Static assets served directly via `whitenoise.middleware.WhiteNoiseMiddleware` with unique cache-busting hashes (`CompressedManifestStaticFilesStorage`).
+- **Database Scalability:**
+  - Native connection string parsing (`DATABASE_URL`) via `dj-database-url` enables seamless pairing with managed PostgreSQL clusters.
+- **Synthetic Demo Data Automation:**
+  - Automated management command (`seed_demo_data`) guarantees reproducible demo evaluation with provisioned Administrator, Document Owner, and Viewer personas.

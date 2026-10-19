@@ -343,3 +343,51 @@ class AuthenticationAndRBACTests(TestCase):
         })
         # Must be rejected with 403 Forbidden due to missing CSRF token
         self.assertEqual(response.status_code, 403)
+
+
+class SeedDemoDataCommandTests(TestCase):
+    """Automated verification for the seed_demo_data management command."""
+
+    def test_seed_demo_data_execution_and_idempotency(self):
+        """Verify command provisions all demo entities and runs idempotently."""
+        from io import StringIO
+        from django.core.management import call_command
+        from documents.models import Document
+        from permissions.models import DocumentPermission, PermissionType
+
+        out = StringIO()
+        call_command('seed_demo_data', stdout=out)
+        output = out.getvalue()
+
+        self.assertIn('admin_demo', output)
+        self.assertIn('owner_demo', output)
+        self.assertIn('viewer_demo', output)
+
+        # Verify users exist with correct roles
+        admin_u = User.objects.get(username='admin_demo')
+        owner_u = User.objects.get(username='owner_demo')
+        viewer_u = User.objects.get(username='viewer_demo')
+
+        self.assertEqual(admin_u.role, User.Role.ADMIN)
+        self.assertEqual(owner_u.role, User.Role.OWNER)
+        self.assertEqual(viewer_u.role, User.Role.VIEWER)
+
+        # Verify documents exist
+        docs = Document.objects.filter(owner=owner_u)
+        self.assertEqual(docs.count(), 3)
+
+        # Verify permissions
+        doc1 = docs.get(name='TrustVault Architecture & Threat Model Specification')
+        doc2 = docs.get(name='Enterprise Security Audit & Penetration Test Report')
+        doc3 = docs.get(name='Board Resolution & Executive Compensation Q3 2026')
+
+        self.assertTrue(DocumentPermission.objects.filter(document=doc1, user=viewer_u, permission_type=PermissionType.READ).exists())
+        self.assertTrue(DocumentPermission.objects.filter(document=doc2, user=viewer_u, permission_type=PermissionType.EDIT).exists())
+        # doc3 permission should be revoked
+        self.assertFalse(DocumentPermission.objects.filter(document=doc3, user=viewer_u).exists())
+
+        # Test idempotency (run again without error)
+        out2 = StringIO()
+        call_command('seed_demo_data', stdout=out2)
+        output2 = out2.getvalue()
+        self.assertIn('TrustVault Demo Data successfully provisioned!', output2)
