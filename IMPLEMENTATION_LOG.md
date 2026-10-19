@@ -128,4 +128,38 @@
 - All 140 automated tests passing with 100% success rate across both `manage.py test` (140/140) and `pytest` (140/140).
 - Final Acceptance Audit Verdict: **VERIFIED — ACCEPTED**.
 
+### Phase 07 — Persistent Audit Trail & Document Activity Monitoring Engine (19 October 2026)
+- Designed and migrated `AuditEvent` model in `audit/models.py` (`audit/migrations/0001_initial.py`):
+  - Captures event types: `DOCUMENT_UPLOADED`, `DOCUMENT_DOWNLOADED`, `DOCUMENT_UPDATED`, `DOCUMENT_DELETED`, `PERMISSION_GRANTED`, `PERMISSION_UPDATED`, `PERMISSION_REVOKED`, `SECURITY_ACCESS_DENIED`.
+  - Implements append-only immutability: `save()` on existing instances and `delete()` calls raise `ValidationError`.
+  - Captures historical snapshots: `actor_username`, `target_document_id_snapshot`, `target_document_name_snapshot`, `target_username`. Survives foreign entity deletion (`models.SET_NULL`).
+  - Employs dedicated database indexes on timestamp, event type, actor, document, recipient, and status.
+- Configured read-only `AuditEventAdmin` in `audit/admin.py` disabling add, change, and delete permissions (`has_add_permission=False`, `has_change_permission=False`, `has_delete_permission=False`) and setting all fields as read-only.
+- Built centralized `AuditService` in `audit/services.py`:
+  - Enforces metadata sanitization (`sanitize_metadata`) stripping passwords, tokens, cookies, secrets, and system paths.
+  - Implements domain-specific loggers: `log_document_uploaded`, `log_document_downloaded`, `log_document_updated`, `log_document_deleted`, `log_permission_granted`, `log_permission_updated`, `log_permission_revoked`, `log_access_denied`.
+  - Enforces role-based query authorization: `get_global_audit_trail` (strictly Administrator) and `get_document_audit_trail` (strictly Document Owner).
+- Integrated audit logging into existing workflows:
+  - `DocumentService.upload_document`: atomic audit logging on successful upload.
+  - `DocumentService.update_document_metadata`: atomic audit logging on metadata modification.
+  - `DocumentService.delete_document`: atomic audit logging capturing document ID and name snapshots before record deletion.
+  - `document_download_view`: audit logging upon authorized download stream initiation; logs security denial on unauthorized download attempt.
+  - `PermissionService.grant_permission`: atomic audit logging on access grant.
+  - `PermissionService.update_permission`: atomic audit logging recording previous and new permission levels.
+  - `PermissionService.revoke_permission_by_id` & `revoke_permission`: atomic audit logging recording revoked permission level.
+- Created audit activity views and templates:
+  - `audit_trail_view` (`/audit/`): Administrator-only dashboard with event type, actor, date range, and keyword filters, pagination (25 items/page), and event detail modals.
+  - `document_activity_view` (`/audit/document/<doc_id>/`): Document Owner-only activity log showing chronological access history.
+  - Updated `templates/documents/document_detail.html` with "View Activity History" owner action.
+- Added comprehensive test suite `PersistentAuditTrailEngineTests` in `audit/tests.py` covering 32 test scenarios:
+  - Event persistence for all 7 mandatory event types.
+  - Immutability and tamper resistance at model and admin layers.
+  - Role-based authorization boundaries (Admin global access, Owner document activity, Viewer rejection).
+  - Filtering, search, and pagination.
+  - Transactional rollback integrity.
+  - Data hygiene and sensitive attribute sanitization.
+  - Historical snapshot retention upon entity deletion.
+- Automated test count: **172 passing tests (100% success rate)** across `manage.py test` (172/172) and `pytest` (172/172).
+
+
 

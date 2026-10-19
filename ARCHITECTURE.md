@@ -155,5 +155,30 @@ TrustVault is built as a highly modular monolith following the principle of leas
 - **Audit Logging Preparation:**
   - All successful grants, permission modifications, revocations, and unauthorized access attempts are recorded via structured security logs capturing actor, recipient, document ID, action, and timestamp.
 
+### 10. Persistent Audit Trail & Activity Monitoring Engine (Phase 07)
+- **Persistent Database Model (`AuditEvent`):**
+  - Database-backed append-only ledger residing in `audit/models.py`.
+  - Captures categorical `event_type` (`DOCUMENT_UPLOADED`, `DOCUMENT_DOWNLOADED`, `DOCUMENT_UPDATED`, `DOCUMENT_DELETED`, `PERMISSION_GRANTED`, `PERMISSION_UPDATED`, `PERMISSION_REVOKED`, `SECURITY_ACCESS_DENIED`).
+  - Employs dedicated database indexes on `timestamp`, `event_type`, `actor`, `target_document`, and `target_user`.
+- **Historical Snapshot Preservation:**
+  - Entity references use `models.SET_NULL` for foreign keys so that records survive entity deletions.
+  - Snapshots `actor_username`, `target_document_id_snapshot`, `target_document_name_snapshot`, and `target_username` at the moment of event creation, providing unbroken forensic auditability even after user or document deletion.
+- **Append-Only Immutability & Tamper Resistance:**
+  - Model-layer defense: `AuditEvent.save()` rejects modifications to existing records with `ValidationError`; `AuditEvent.delete()` strictly rejects deletions with `ValidationError`.
+  - Administrative boundary: `AuditEventAdmin` disables all write permissions (`has_add_permission=False`, `has_change_permission=False`, `has_delete_permission=False`) and renders all fields read-only.
+  - Public interface defense: Audit endpoints accept HTTP `GET` only; `POST`, `PUT`, `DELETE` are rejected with `HTTP 405 Method Not Allowed`.
+- **Transactional Consistency & Safe Failure Policy:**
+  - Operations that alter database state (`upload_document`, `update_document_metadata`, `delete_document`, `grant_permission`, `update_permission`, `revoke_permission`) execute the business mutation and audit event write within the same atomic transaction (`with transaction.atomic():`).
+  - If a transaction rolls back, no orphan or false-success audit event persists.
+  - For streaming file delivery (`document_download_view`), the audit event is persisted before file streaming begins; if audit logging fails, streaming is aborted.
+- **Data Hygiene & Privacy Enforcement:**
+  - `AuditService.sanitize_metadata()` automatically strips passwords, tokens, session IDs, CSRF tokens, secret keys, cookie values, and system filesystem paths before saving.
+  - Audit records never store document binary content, raw bytes, or decryption secrets.
+- **Role-Governed Audit Dashboards:**
+  - **Global Audit Trail (`/audit/`):** Restricted to Administrators (`RBACService.can_view_audit_logs`). Provides filtering by event type, actor, date range, and text search with pagination. Administrators cannot download private document files through this view.
+  - **Document Activity Log (`/audit/document/<doc_id>/`):** Restricted to Document Owners. Owners can monitor access, downloads, and permission history for their specific documents.
+  - **Zero Viewer Access:** Viewers attempting to access global or document audit logs receive `HTTP 403 Forbidden`.
+
+
 
 
