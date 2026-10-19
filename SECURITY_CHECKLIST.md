@@ -77,3 +77,21 @@ This living checklist tracks application security controls, verification evidenc
 | `SESSION_COOKIE_HTTPONLY` | `True` | Mitigates XSS-based session token exfiltration. |
 | `SESSION_COOKIE_SAMESITE` | `Lax` | Protects against cross-site request forgery. |
 | `CSRF_COOKIE_SAMESITE` | `Lax` | Restricts CSRF token transmission on cross-site requests. |
+
+---
+
+## 6. Document Sharing & Revocation Security (Phase 06)
+
+| Control | Status | Evidence / Implementation |
+|---------|--------|---------------------------|
+| **Owner-Only Sharing Authority** | Verified | Enforced via `PermissionService.can_manage_permissions()`. Viewers and admins receive HTTP 403. |
+| **Self-Sharing Prevention** | Verified | `DocumentShareForm.clean_recipient_username()` and `PermissionService.grant_permission()` reject self-sharing with `ValidationError`. |
+| **Inactive Account Protection** | Verified | Inactive accounts (`is_active=False`) are rejected during sharing and excluded from search results. |
+| **Atomic Permission Grants** | Verified | Handled in `transaction.atomic()` via `update_or_create()`, preventing race conditions and duplicate rows. |
+| **Cross-Document IDOR Protection** | Verified | Permission update and revoke endpoints validate `perm.document_id == document.id`, preventing cross-document manipulation. |
+| **POST-Only State Alterations** | Verified | Grant, update, and revoke endpoints decorated with `@require_POST`. GET returns HTTP 405. |
+| **CSRF Enforcement on Mutations** | Verified | All sharing forms enforce CSRF verification; requests lacking tokens are rejected with HTTP 403. |
+| **Immediate Access Cutoff** | Verified | Revoked users immediately lose access to detail views, download streams, and edit endpoints. |
+| **Document Preservation on Revoke** | Verified | Revoking permissions deletes `DocumentPermission` records only; underlying `Document` and files are preserved. |
+| **Bounded Recipient Lookup** | Verified | User search API restricted to owners; queries capped at 20 results; returns only `id`, `username`, `role`. |
+

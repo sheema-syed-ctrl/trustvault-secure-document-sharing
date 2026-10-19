@@ -89,3 +89,32 @@
 - Expanded automated test suite with 22 new security and streaming tests in `documents/tests.py` (`DocumentDownloadAndDeliveryTests`).
 - Automated test count: 101 passing (41 in documents, 30 in permissions, 24 in accounts, 6 in core).
 - Produced `PHASE_05_VERIFICATION_REPORT.md`.
+
+### [2026-10-19 14:15] Phase 05 Final Security Acceptance Audit
+- Resolved UUID vs Integer primary key routing clarification: established `Document.id = BigAutoField(primary_key=True)` and verified `<int:doc_id>` converter.
+- Added strict fallback to `application/octet-stream` in `document_download_view` for unrecognized or missing MIME types against `settings.PERMITTED_FILE_TYPES`.
+- Verified HEAD requests deliver empty body (0 bytes), full security headers, and clean file descriptor closure.
+- Added 3 new tests in `documents/tests.py` (HEAD request behavior, MIME fallback, malformed doc ID 404 handling).
+- Automated test count: 104 passing.
+- Produced `PHASE_05_FINAL_ACCEPTANCE_AUDIT.md` (Decision: VERIFIED — ACCEPTED).
+
+### [2026-10-19 15:10] Phase 06 — Document Sharing & Access Revocation Engine
+- Pre-implementation inspection: Verified `DocumentPermission` unique constraints, `PermissionService`, and user roles.
+- Enhanced `PermissionService` in `permissions/services.py`:
+  - `grant_permission`: Enforced non-self sharing and active user validation within `transaction.atomic()`. Emits structured security audit logs.
+  - `update_permission`: Safely updates permissions between READ and EDIT; validates cross-document IDOR boundaries.
+  - `revoke_permission_by_id`: Revokes access by permission ID; validates document ownership to prevent cross-document permission deletion.
+  - `search_shareable_users`: Bounded recipient lookup (max 20) selecting safe fields only (`id`, `username`, `role`), excluding owner and inactive accounts.
+- Created `permissions/forms.py` with `DocumentShareForm` and `DocumentPermissionUpdateForm`.
+- Implemented permission management views in `permissions/views.py`:
+  - `document_share_manage_view`: Primary owner interface for sharing, recipient lookup, and listing active permissions.
+  - `document_permission_grant_view`: POST-only endpoint to grant or update permissions.
+  - `document_permission_update_view`: POST-only endpoint to toggle between READ and EDIT.
+  - `document_permission_revoke_view`: POST-only endpoint to revoke permissions with confirmation.
+  - `user_search_api_view`: GET-only JSON endpoint for bounded recipient lookup.
+- Registered URL routes in `permissions/urls.py` and added convenience redirect `/documents/<int:doc_id>/share/` in `documents/urls.py`.
+- Created responsive template `templates/permissions/share_manage.html` with recipient selection, active grants table, and revocation confirmation modals.
+- Updated `templates/documents/document_detail.html` and `document_list.html` with contextual Share & Permissions actions for document owners.
+- Added comprehensive test suite `DocumentSharingWorkflowTests` in `permissions/tests.py` covering all 33 test scenarios across sharing, updates, revocation, and user lookup security.
+- Automated test count: 137 passing (63 in permissions, 44 in documents, 24 in accounts, 6 in core).
+

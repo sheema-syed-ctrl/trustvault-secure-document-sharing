@@ -139,4 +139,21 @@ TrustVault is built as a highly modular monolith following the principle of leas
   - `Cache-Control`: `private, no-store, max-age=0, must-revalidate` and `Pragma: no-cache` prevent intermediary and local disk caching of confidential payloads.
   - Supported HTTP Methods: Restricted to `GET` and `HEAD` via `@require_http_methods(["GET", "HEAD"])`. `POST`, `PUT`, `DELETE` return `HTTP 405 Method Not Allowed`.
 
+### 9. Document Sharing & Access Revocation Engine (Phase 06)
+- **Owner-Controlled Access Delegation:**
+  - Document owners have exclusive authority to grant, modify, and revoke access for their documents via `permissions.services.PermissionService`.
+  - Non-owners, Viewers, and Administrators attempting permission mutations receive HTTP 403 `PermissionDenied`.
+- **Granular Permission Lifecycle (READ & EDIT):**
+  - **Grant Workflow:** `PermissionService.grant_permission(actor, document, target_user, permission_type)` creates or updates grants atomically. Self-sharing and sharing with inactive accounts are strictly rejected.
+  - **Update Workflow:** `PermissionService.update_permission(actor, document, permission_id, new_permission_type)` safely upgrades or downgrades access between READ and EDIT. Validates that `permission_id` belongs to `document` to prevent cross-document IDOR attacks.
+  - **Revocation Workflow:** `PermissionService.revoke_permission_by_id(actor, document, permission_id)` removes grants. Revoked users immediately lose authorization to view metadata, download files, or edit documents. Revocation does not affect the underlying document or physical storage files.
+  - **State-Changing Methods:** All grant, update, and revoke endpoints require HTTP `POST` and enforce CSRF verification. `GET` requests cannot mutate permissions and return `HTTP 405 Method Not Allowed`.
+- **Bounded User Lookup Security:**
+  - Recipient search endpoint (`/permissions/document/<doc_id>/users/search/`) is strictly restricted to authenticated document owners.
+  - Excludes inactive accounts, the document owner, and the searching actor to prevent self-sharing and user enumeration.
+  - Queries are capped at 20 results (max 50) and select only safe fields (`id`, `username`, `role`), preventing credential or profile data leakage.
+- **Audit Logging Preparation:**
+  - All successful grants, permission modifications, revocations, and unauthorized access attempts are recorded via structured security logs capturing actor, recipient, document ID, action, and timestamp.
+
+
 
