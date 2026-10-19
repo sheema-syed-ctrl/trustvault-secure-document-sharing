@@ -67,3 +67,25 @@
   - Added 3 new dual-state tests in `documents/tests.py` (rollback preservation, missing file resilience, OSError handling).
 - Automated test count: 79 passing (30 in permissions, 19 in documents, 24 in accounts, 6 in core).
 - Produced `PHASE_04_ADDITIONAL_SECURITY_REVIEW.md`.
+
+### [2026-10-19 13:15] Phase 05 — Secure Document Access, Protected File Streaming & Download Authorization
+- Pre-implementation verification:
+  - Verified migrations status (`python manage.py migrate --check` -> 0).
+  - Added service-layer grantor validation: implemented `PermissionService.grant_permission` and `PermissionService.revoke_permission`.
+  - Documented orphan file recovery procedure in `ARCHITECTURE.md`.
+- Implemented `DocumentService.get_authorized_file(actor, document_id)`:
+  - Enforces mandatory user authentication.
+  - Queries document and evaluates object-level READ permission via `PermissionService.can_read()`.
+  - Hardened path traversal and symlink escape defenses via `is_relative_to(root)` in `get_protected_storage_path()`.
+  - Verifies physical file existence before opening; handles missing files safely.
+- Implemented `document_download_view` in `documents/views.py`:
+  - Decorated with `@login_required` and `@require_http_methods(["GET", "HEAD"])`.
+  - Delivers files via chunked `FileResponse` streaming without memory buffering.
+  - Automatically manages file handle closure.
+  - Injected defensive security headers: `Content-Disposition: attachment; filename="<sanitized>"`, `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store, max-age=0, must-revalidate`, `Pragma: no-cache`.
+  - Structured security logging for downloads, authorization denials, and storage misses.
+- Registered download route in `documents/urls.py` (`/documents/<int:doc_id>/download/`).
+- Updated document templates (`document_detail.html` and `document_list.html`) to expose download actions exclusively to authorized users.
+- Expanded automated test suite with 22 new security and streaming tests in `documents/tests.py` (`DocumentDownloadAndDeliveryTests`).
+- Automated test count: 101 passing (41 in documents, 30 in permissions, 24 in accounts, 6 in core).
+- Produced `PHASE_05_VERIFICATION_REPORT.md`.

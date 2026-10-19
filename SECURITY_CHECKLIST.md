@@ -52,7 +52,23 @@ This living checklist tracks application security controls, verification evidenc
 
 ---
 
-## 4. Operational Headers & Configuration
+## 4. Secure Document Access & Download Delivery (Phase 05)
+
+| Control | Status | Evidence / Implementation |
+|---------|--------|---------------------------|
+| **Protected Download Broker** | Verified | All document downloads mediated through `/documents/<doc_id>/download/`. No public file endpoints exist. |
+| **Download Authorization Matrix** | Verified | Enforced via `DocumentService.get_authorized_file()`: Owners, READ grantees, EDIT grantees permitted. Unassigned users (403), Admins without grant (403), Anonymous (302) denied. |
+| **Path Traversal & Symlink Defense** | Verified | Verified with `is_relative_to(root)` in `get_protected_storage_path()`. Escaping paths raise `PermissionDenied`. |
+| **Missing Storage File Safety** | Verified | Missing physical files return HTTP 404 without leaking internal system paths to users; logged at ERROR level. |
+| **Content-Disposition Sanitization** | Verified | Original filename sanitized with `sanitize_filename()`, stripping CRLF (`\r`, `\n`) to prevent HTTP response splitting. |
+| **Attachment Disposition Default** | Verified | `as_attachment=True` prevents browsers from inline executing untrusted or potentially active formats. |
+| **Chunked File Streaming** | Verified | Streamed via `FileResponse` in chunks; memory footprint remains low for large files; handles auto-close. |
+| **Private Cache Protection** | Verified | `Cache-Control: private, no-store, max-age=0, must-revalidate` and `Pragma: no-cache` prevent caching. |
+| **HTTP Method Restriction** | Verified | Only `GET` and `HEAD` allowed (`@require_http_methods(['GET', 'HEAD'])`). Other verbs return HTTP 405. |
+
+---
+
+## 5. Operational Headers & Configuration
 
 | Header / Setting | Configuration | Verification |
 |------------------|---------------|--------------|

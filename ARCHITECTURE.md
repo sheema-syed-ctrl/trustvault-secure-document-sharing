@@ -99,4 +99,44 @@ TrustVault is built as a highly modular monolith following the principle of leas
   - `DocumentService.delete_document()` guarantees database atomicity and triggers physical file removal only after successful transaction commit via `transaction.on_commit()`.
   - Rollback safety: If database deletion fails or rolls back, the physical file on disk is preserved, preventing irreversible data loss.
   - Failure logging: Post-commit physical disk removal failures are captured in structured critical logs for administrative auditing without rolling back committed database state.
+- **Orphan File Detection and Administrative Recovery Procedure:**
+  - *Trigger Condition:* When `os.remove()` encounters an `OSError` (e.g. filesystem lock or permission error) during post-commit cleanup, a `CRITICAL` log entry is written to `logs/security.log`:
+    `CRITICAL: Failed to remove physical file from storage post-commit. Document ID: <id>, Storage File: <uuid.bin>, Path: <path>. Error: <err>`
+  - *Administrative Recovery Runbook:*
+    1. Filter `logs/security.log` for `CRITICAL: Failed to remove physical file from storage post-commit`.
+    2. Extract the recorded `storage_filename`.
+    3. Verify via database query: `Document.objects.filter(storage_filename=filename).exists() == False` to confirm the record was committed and deleted.
+    4. Manually or via scheduled maintenance job, purge the unreferenced `<uuid.bin>` file from `PROTECTED_MEDIA_ROOT`.
+    5. Record the administrative file purge in the maintenance log.
+
+### 8. Secure Document Access, Protected File Streaming & Download Authorization (Phase 05)
+- **Zero Public Access Architecture:**
+  - Protected document media files are never exposed via public static or media URLs.
+  - No `MEDIA_URL` routes to `PROTECTED_MEDIA_ROOT`.
+  - All file downloads are brokered through the authenticated endpoint `/documents/<doc_id>/download/`.
+- **Centralized Download Authorization:**
+  - `DocumentService.get_authorized_file(actor, document_id)` requires authenticated actors.
+  - Queries document and validates READ authorization via `PermissionService.can_read(actor, document)`.
+  - Strict Authorization Matrix:
+    - Document Owner: ALLOW
+    - READ grantee: ALLOW
+    - EDIT grantee: ALLOW
+    - Unassigned user: DENY (HTTP 403 Forbidden)
+    - Administrator without explicit permission: DENY (HTTP 403 Forbidden)
+    - Anonymous user: DENY (HTTP 302 Redirect to Login)
+- **Storage Path Resolution & Path Traversal / Symlink Immunity:**
+  - `DocumentService.get_protected_storage_path` validates that `(root / storage_filename).resolve().is_relative_to(root.resolve())`.
+  - Rejects directory traversal attempts (`../`) and symlink escapes with `PermissionDenied`.
+  - Physical file existence is verified on disk before opening; missing files trigger `Http404` and structured error logs without exposing filesystem directory paths in HTTP responses.
+- **Efficient Chunked Streaming & Resource Management:**
+  - Files are streamed via Django's `FileResponse` in chunks, avoiding buffering large files in RAM.
+  - File handles are automatically closed upon response completion.
+- **Defensive HTTP Security Headers:**
+  - `Content-Type`: Set to verified MIME type stored in database metadata.
+  - `Content-Disposition`: Enforced as `attachment; filename="<sanitized>"`. CRLF characters (`\r`, `\n`) are stripped from original filenames to prevent HTTP response splitting.
+  - Active formats (e.g. HTML, SVG) are forced to download rather than execute in the browser context.
+  - `X-Content-Type-Options`: `nosniff` prevents MIME-sniffing attacks.
+  - `Cache-Control`: `private, no-store, max-age=0, must-revalidate` and `Pragma: no-cache` prevent intermediary and local disk caching of confidential payloads.
+  - Supported HTTP Methods: Restricted to `GET` and `HEAD` via `@require_http_methods(["GET", "HEAD"])`. `POST`, `PUT`, `DELETE` return `HTTP 405 Method Not Allowed`.
+
 
