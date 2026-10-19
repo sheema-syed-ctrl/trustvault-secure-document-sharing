@@ -4,7 +4,7 @@
 **Submission Deadline:** 25 October 2026, 6:00 PM IST  
 **Verification Date:** 19 October 2026  
 **Auditor / Engineer:** Principal Django Architect, Application Security Engineer & QA Lead  
-**Status:** **VERIFIED & PASSING (137/137 Tests Passing, 100% Success Rate)**  
+**Status:** **VERIFIED & PASSING (140/140 Tests Passing, 100% Success Rate)**  
 
 ---
 
@@ -21,7 +21,7 @@ Phase 06 establishes a complete, user-facing, and server-side validated permissi
 6. **Bounded Recipient Lookup:** Bounded, safe search endpoint (`/permissions/document/<doc_id>/users/search/`) restricted to document owners, exposing only safe fields (`id`, `username`, `role`), excluding self and inactive accounts to prevent user enumeration.
 7. **Zero-Trust Presentation:** All authorization checks are enforced server-side. State-altering endpoints require HTTP `POST` and enforce CSRF verification.
 
-All **137 automated tests** (24 accounts, 6 core, 44 documents, 63 permissions) pass with 100% success rate across both `manage.py test` and `pytest`.
+All **140 automated tests** (24 accounts, 6 core, 44 documents, 66 permissions) pass with 100% success rate across both `manage.py test` and `pytest`.
 
 ---
 
@@ -139,24 +139,24 @@ The recipient lookup endpoint (`/permissions/document/<doc_id>/users/search/`) a
 ```text
 > python manage.py test permissions.tests.DocumentSharingWorkflowTests
 Creating test database for alias 'default'...
-.................................
+....................................
 ----------------------------------------------------------------------
-Ran 33 tests in 241.319s
+Ran 36 tests in 255.430s
 
 OK
 Destroying test database for alias 'default'...
-Found 33 test(s).
+Found 36 test(s).
 System check identified no issues (0 silenced).
 ```
 
 ### 7.2 Full Regression Suite (`manage.py test`)
 ```text
 > python manage.py test
-Found 137 test(s).
+Found 140 test(s).
 System check identified no issues (0 silenced).
-.........................................................................................................................................
+............................................................................................................................................
 ----------------------------------------------------------------------
-Ran 137 tests in 697.627s
+Ran 140 tests in 558.664s
 
 OK
 Destroying test database for alias 'default'...
@@ -170,15 +170,15 @@ platform win32 -- Python 3.13.7, pytest-9.1.1, pluggy-1.7.0
 django: version: 5.2.18, settings: trustvault.settings (from ini)
 rootdir: F:\Sheema, configfile: pytest.ini
 plugins: django-4.14.0
-collected 137 items
+collected 140 items
 
 accounts\tests.py ........................                               [ 17%]
 core\tests.py ......                                                     [ 21%]
-documents\tests.py ............................................          [ 54%]
-permissions\tests.py ................................................... [ 91%]
-............                                                             [100%]
+documents\tests.py ............................................          [ 52%]
+permissions\tests.py ................................................... [ 89%]
+...............                                                          [100%]
 
-====================== 137 passed in 1480.43s (0:24:40) =======================
+======================= 140 passed in 607.87s (0:10:07) =======================
 ```
 
 ### 7.4 System Sanity Checks
@@ -212,7 +212,7 @@ permissions\tests.py ................................................... [ 91%]
 | 18. Non-owner cannot revoke access | **PASS** | `test_18_non_owner_cannot_revoke_access` |
 | 19. Revocation uses POST | **PASS** | `test_19_revocation_uses_post` (GET returns 405) |
 | 20. GET cannot mutate permissions | **PASS** | `test_20_get_requests_cannot_mutate_permissions` |
-| 21. CSRF protection enabled | **PASS** | `test_21_csrf_protection_remains_enabled` (403 without token) |
+| 21. CSRF protection enabled | **PASS** | `test_21_csrf_protection_remains_enabled` (403 without token; valid token 302) |
 | 22. Revoked READ user immediately blocked | **PASS** | `test_22_revoked_read_user_cannot_access_the_document` |
 | 23. Revoked EDIT user immediately blocked | **PASS** | `test_23_revoked_edit_user_cannot_edit_or_download` |
 | 24. Document preserved on revoke | **PASS** | `test_24_revocation_does_not_delete_the_underlying_document` |
@@ -225,6 +225,9 @@ permissions\tests.py ................................................... [ 91%]
 | 31. Search result count bounded | **PASS** | `test_31_search_result_count_is_bounded` (Max 20 results) |
 | 32. Convenience route redirects | **PASS** | `test_32_document_share_redirect_view_routes_to_permissions_manage` |
 | 33. UI actions and permissions rendered | **PASS** | `test_33_manage_page_renders_active_permissions_and_share_form` |
+| 34. Injected POST body cannot transfer user | **PASS** | `test_34_permission_update_cannot_transfer_to_another_user` |
+| 35. Model full_clean() on save() enforced | **PASS** | `test_35_document_permission_full_clean_on_save` |
+| 36. Stale cache resistance on immediate revoke | **PASS** | `test_36_immediate_revocation_stale_cache_resistance` |
 
 ---
 
