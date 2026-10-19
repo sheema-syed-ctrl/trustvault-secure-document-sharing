@@ -56,3 +56,20 @@ TrustVault is built as a highly modular monolith following the principle of leas
 ### 4. Audit Trail Layer
 - Security-relevant events (e.g., `LOGIN`, `LOGOUT`, `DOCUMENT_UPLOAD`, `DOCUMENT_VIEW`, `DOCUMENT_DOWNLOAD`, `PERMISSION_GRANTED`, `PERMISSION_REVOKED`, `ACCESS_DENIED`) are recorded in an append-only table.
 - Logs capture actor, target document, action result, timestamp, client IP, and relevant metadata without logging sensitive document contents or credentials.
+
+### 5. Document Management Engine & File Security Subsystem (Phase 03)
+- **Zero-Trust File Ingestion:** All uploaded files pass through `documents/validators.py:validate_file_upload`.
+  - Browser-supplied `Content-Type` headers and file extensions are treated as untrusted user input.
+  - Initial binary chunks (4096 bytes) are inspected via `filetype` magic-byte signature matching.
+  - Extension spoofing (e.g. executable `.exe` or script renamed as `.pdf`) triggers immediate validation failure.
+  - Plain text files are verified against clean UTF-8 decoding without null-byte injections.
+  - Strict file size cap is enforced at `settings.MAX_UPLOAD_SIZE_BYTES` (25 MB default).
+- **Physical Storage Isolation:**
+  - Files are written to `protected_media/<uuid4>.bin`, outside the web root and with no public URL routing.
+  - Internal UUID filenames eliminate filename collisions and negate path traversal attacks.
+  - Original filenames are sanitized using `sanitize_filename()` before saving as display metadata.
+- **Atomic Operations & Safe Cleanup:**
+  - Ingestion runs in database transaction blocks; failures automatically clean up written physical files.
+  - Deletion via `DocumentService.delete_document()` destroys both the database record and physical disk file safely.
+- **Cross-Owner Object Isolation:**
+  - Document owners can manage only their own documents. Viewers and cross-owners attempting direct access to detail, edit, or delete endpoints receive HTTP 403 `PermissionDenied`.

@@ -40,12 +40,16 @@ def admin_dashboard_view(request):
     return render(request, 'dashboard/admin_dashboard.html', context)
 
 
+from documents.models import Document
+
+
 @login_required
 def owner_dashboard_view(request):
     """Document Owner dashboard overview."""
+    user_docs = Document.objects.filter(owner=request.user)
     context = {
-        'recent_documents': [],  # Integrated with Document model in Phase 03
-        'total_documents': 0,
+        'recent_documents': user_docs.order_by('-created_at')[:5],
+        'total_documents': user_docs.count(),
         'shared_count': 0,
     }
     return render(request, 'dashboard/owner_dashboard.html', context)

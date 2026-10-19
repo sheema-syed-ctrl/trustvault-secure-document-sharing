@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Confidential Document — TrustVault{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-3">
+    <div class="col-lg-8">
+        <div class="d-flex align-items-center mb-3">
+            <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary btn-sm me-2">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <h3 class="fw-bold mb-0">Upload Confidential Document</h3>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 rounded-4">
+                    <div class="card-body p-4">
+                        <form method="post" action="{% url 'documents:upload' %}" enctype="multipart/form-data" novalidate>
+                            {% csrf_token %}
+
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger py-2 small mb-3">
+                                    {% for error in form.non_field_errors %}
+                                        <div><i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <div class="mb-3">
+                                <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">Document Title</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.category.id_for_label }}" class="form-label fw-semibold">Classification Category</label>
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                    <div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">Description (Optional)</label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="{{ form.file.id_for_label }}" class="form-label fw-semibold">Select File</label>
+                                {{ form.file }}
+                                <div class="form-text small">
+                                    {{ form.file.help_text }}
+                                </div>
+                                {% if form.file.errors %}
+                                    <div class="text-danger small mt-1 fw-semibold">
+                                        <i class="bi bi-shield-x me-1"></i> {{ form.file.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                    <i class="bi bi-cloud-arrow-up-fill me-1"></i> Secure Upload
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Security Guarantees Sidebar -->
+            <div class="col-md-5">
+                <div class="card border-0 shadow-sm rounded-4 bg-light mb-3">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold text-uppercase text-secondary mb-3 small">
+                            <i class="bi bi-shield-check text-primary me-1"></i> Storage &amp; Validation Policy
+                        </h6>
+                        <ul class="list-unstyled small mb-0 text-muted">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>File Signature Verification:</strong> Binary magic bytes are inspected to prevent extension spoofing.
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>Private Storage Root:</strong> Documents are stored strictly outside public web roots.
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>Random Storage UUIDs:</strong> Protects against path traversal and file collisions.
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>Cryptographic SHA-256:</strong> Verifies file integrity across lifecycle.
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>Strict Size Cap:</strong> Maximum file size enforced at 25 MB.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

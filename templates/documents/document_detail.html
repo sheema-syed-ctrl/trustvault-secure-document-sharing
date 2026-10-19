@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ document.name }} — Document Details — TrustVault{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div class="d-flex align-items-center">
+        <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h2 class="fw-bold mb-0">{{ document.name }}</h2>
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                    {{ document.get_category_display }}
+                </span>
+            </div>
+            <p class="text-muted small mb-0">Owned by <strong>{{ document.owner.username }}</strong> &bull; Uploaded on {{ document.created_at|date:"M d, Y H:i" }}</p>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        {% if is_owner %}
+            <a href="{% url 'documents:edit' document.id %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-pencil me-1"></i> Edit Metadata
+            </a>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteDocModal">
+                <i class="bi bi-trash me-1"></i> Delete
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <!-- Description Card -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-uppercase small text-secondary">Document Description</h6>
+            </div>
+            <div class="card-body p-4">
+                {% if document.description %}
+                    <p class="mb-0 text-body" style="white-space: pre-line;">{{ document.description }}</p>
+                {% else %}
+                    <span class="text-muted fst-italic">No description provided for this document.</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Verification & Integrity Details -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-uppercase small text-secondary">Cryptographic &amp; Storage Integrity</h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    <label class="text-muted small text-uppercase fw-semibold d-block">SHA-256 Checksum</label>
+                    <div class="p-2 bg-light rounded font-monospace small text-break border">
+                        <i class="bi bi-fingerprint text-primary me-2"></i>{{ document.sha256_hash }}
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small text-uppercase fw-semibold d-block">Internal Vault Identifier</label>
+                        <div class="p-2 bg-light rounded font-monospace small border">
+                            {{ document.uuid }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small text-uppercase fw-semibold d-block">Storage Shield</label>
+                        <div class="p-2 bg-success-subtle text-success rounded small border border-success-subtle">
+                            <i class="bi bi-shield-lock-fill me-1"></i> Isolated in Private Protected Media
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metadata Sidebar -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-uppercase small text-secondary">File Attributes</h6>
+            </div>
+            <div class="card-body p-4">
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Original Filename</span>
+                        <span class="fw-semibold text-truncate ms-2" style="max-width: 180px;">{{ document.original_filename }}</span>
+                    </li>
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Verified MIME</span>
+                        <span class="font-monospace text-dark">{{ document.mime_type }}</span>
+                    </li>
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span class="text-muted">File Size</span>
+                        <span class="fw-semibold">{{ document.formatted_size }} ({{ document.file_size }} bytes)</span>
+                    </li>
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Category</span>
+                        <span>{{ document.get_category_display }}</span>
+                    </li>
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Created</span>
+                        <span>{{ document.created_at|date:"M d, Y H:i" }}</span>
+                    </li>
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Last Updated</span>
+                        <span>{{ document.updated_at|date:"M d, Y H:i" }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if is_owner %}
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteDocModal" tabindex="-1" aria-labelledby="deleteDocModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteDocModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Document</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to permanently delete <strong>{{ document.name }}</strong>?</p>
+                    <p class="text-muted small mb-0">The document metadata and underlying protected storage file will be immediately destroyed.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'documents:delete' document.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">Confirm Deletion</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
