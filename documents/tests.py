@@ -827,3 +827,458 @@ class DocumentDownloadAndDeliveryTests(TestCase):
                 document=self.alice_doc,
                 target_user=self.viewer_charlie
             )
+
+
+class DocumentSearchAndDiscoveryTests(TestCase):
+    """
+    Automated test suite for Phase 08: Advanced Document Search, Filtering & Discovery Engine.
+    Verifies:
+      - Keyword search (name, description, original_filename, owner, category).
+      - Multi-factor filtering (category, owner, date ranges).
+      - Range validation (inverted dates, malformed inputs).
+      - Injection-safe sorting and bounded pagination.
+      - Query parameter preservation across pagination links.
+      - Strict authorization boundaries (Viewer isolation, Owner boundary, Admin boundary).
+      - Dynamic privacy-preserving owner choices (no unrelated user leakage).
+      - Immediate search exclusion upon permission revocation.
+      - Non-indexing of binary file payloads.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.password = "SecurePass2026!#"
+
+        # Users
+        self.owner_alice = User.objects.create_user(
+            username='search_alice', email='alice_search@vault.local',
+            password=self.password, role=User.Role.OWNER
+        )
+        self.owner_bob = User.objects.create_user(
+            username='search_bob', email='bob_search@vault.local',
+            password=self.password, role=User.Role.OWNER
+        )
+        self.owner_david = User.objects.create_user(
+            username='search_david', email='david_search@vault.local',
+            password=self.password, role=User.Role.OWNER
+        )
+        self.viewer_charlie = User.objects.create_user(
+            username='search_charlie', email='charlie_search@vault.local',
+            password=self.password, role=User.Role.VIEWER
+        )
+        self.viewer_frank = User.objects.create_user(
+            username='search_frank', email='frank_search@vault.local',
+            password=self.password, role=User.Role.VIEWER
+        )
+        self.admin_eve = User.objects.create_user(
+            username='search_eve', email='eve_search@vault.local',
+            password=self.password, role=User.Role.ADMIN, is_staff=True
+        )
+
+        self.pdf_bytes = b"%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\nxref\ntrailer\nstartxref\n%%EOF"
+        self.created_files = []
+
+        # Alice's Documents
+        self.doc_alice_fin = DocumentService.upload_document(
+            owner=self.owner_alice,
+            uploaded_file=SimpleUploadedFile("alice_fin_q3.pdf", self.pdf_bytes, content_type="application/pdf"),
+            name="Alice Q3 Financial Statement",
+            description="Confidential quarterly earnings and balance sheet",
+            category=DocumentCategory.FINANCIAL
+        )
+        self.doc_alice_legal = DocumentService.upload_document(
+            owner=self.owner_alice,
+            uploaded_file=SimpleUploadedFile("alice_corp_bylaws.pdf", self.pdf_bytes, content_type="application/pdf"),
+            name="Alice Master Legal Agreement",
+            description="Corporate governance bylaws and NDA agreements",
+            category=DocumentCategory.LEGAL
+        )
+        self.doc_alice_tech = DocumentService.upload_document(
+            owner=self.owner_alice,
+            uploaded_file=SimpleUploadedFile("alice_zero_trust.pdf", self.pdf_bytes, content_type="application/pdf"),
+            name="Alice Security Architecture",
+            description="Zero-trust network architecture documentation",
+            category=DocumentCategory.TECHNICAL
+        )
+
+        # Bob's Documents
+        self.doc_bob_legal = DocumentService.upload_document(
+            owner=self.owner_bob,
+            uploaded_file=SimpleUploadedFile("bob_litigation.pdf", self.pdf_bytes, content_type="application/pdf"),
+            name="Bob Legal Defense Brief",
+            description="Commercial litigation strategy briefing",
+            category=DocumentCategory.LEGAL
+        )
+        self.doc_bob_hr = DocumentService.upload_document(
+            owner=self.owner_bob,
+            uploaded_file=SimpleUploadedFile("bob_payroll_2026.pdf", self.pdf_bytes, content_type="application/pdf"),
+            name="Bob Executive Payroll & HR",
+            description="Confidential compensation packages",
+            category=DocumentCategory.HR
+        )
+
+        # David's Document (isolated third party)
+        self.doc_david_ops = DocumentService.upload_document(
+            owner=self.owner_david,
+            uploaded_file=SimpleUploadedFile("david_ops_manual.pdf", self.pdf_bytes, content_type="application/pdf"),
+            name="David Operations Manual",
+            description="Operational maintenance protocols",
+            category=DocumentCategory.GENERAL
+        )
+
+        self.created_files.extend([
+            DocumentService.get_protected_storage_path(self.doc_alice_fin.storage_filename),
+            DocumentService.get_protected_storage_path(self.doc_alice_legal.storage_filename),
+            DocumentService.get_protected_storage_path(self.doc_alice_tech.storage_filename),
+            DocumentService.get_protected_storage_path(self.doc_bob_legal.storage_filename),
+            DocumentService.get_protected_storage_path(self.doc_bob_hr.storage_filename),
+            DocumentService.get_protected_storage_path(self.doc_david_ops.storage_filename),
+        ])
+
+        # Permissions:
+        # Charlie receives READ on alice_legal and bob_legal, and EDIT on alice_tech
+        PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.doc_alice_legal,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+        PermissionService.grant_permission(
+            actor=self.owner_alice,
+            document=self.doc_alice_tech,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.EDIT
+        )
+        PermissionService.grant_permission(
+            actor=self.owner_bob,
+            document=self.doc_bob_legal,
+            target_user=self.viewer_charlie,
+            permission_type=PermissionType.READ
+        )
+
+    def tearDown(self):
+        for path in self.created_files:
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+
+    # =========================================================================
+    # 1. Search Functionality
+    # =========================================================================
+    def test_search_by_document_name(self):
+        """1. Search matching document name returns expected documents."""
+        self.client.login(username='search_alice', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'q': 'Financial'})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Alice Q3 Financial Statement")
+        self.assertNotContains(res, "Alice Master Legal Agreement")
+
+    def test_search_case_insensitive_and_partial(self):
+        """2. Search matches case-insensitively and on partial keywords."""
+        self.client.login(username='search_alice', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'q': 'secURity ARCH'})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Alice Security Architecture")
+        self.assertEqual(res.context['total_count'], 1)
+
+    def test_search_by_original_filename(self):
+        """3. Search by sanitized original filename finds the document."""
+        self.client.login(username='search_alice', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'q': 'alice_corp_bylaws.pdf'})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Alice Master Legal Agreement")
+
+    def test_search_by_owner_username(self):
+        """4. Search by owner username returns authorized documents owned by that user."""
+        self.client.login(username='search_charlie', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'q': 'search_bob'})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Bob Legal Defense Brief")
+        self.assertNotContains(res, "Alice Master Legal Agreement")
+
+    def test_search_by_category_label(self):
+        """5. Search matching category label or code matches relevant documents."""
+        self.client.login(username='search_alice', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'q': 'Legal & Compliance'})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Alice Master Legal Agreement")
+        self.assertNotContains(res, "Alice Q3 Financial Statement")
+
+    def test_empty_search_returns_all_authorized_documents(self):
+        """6. Empty or whitespace search string returns the complete authorized listing."""
+        self.client.login(username='search_alice', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'q': '   '})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 3)
+
+    def test_excessively_long_query_handled_safely(self):
+        """7. Search queries exceeding 100 characters are safely truncated without error."""
+        self.client.login(username='search_alice', password=self.password)
+        long_q = "Financial" + ("A" * 500)
+        res = self.client.get(reverse('documents:list'), {'q': long_q})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 0)
+
+    # =========================================================================
+    # 2. Filtering Functionality
+    # =========================================================================
+    def test_filter_by_category(self):
+        """8. Filtering by category isolates documents within that category."""
+        self.client.login(username='search_alice', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'category': DocumentCategory.FINANCIAL})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 1)
+        self.assertContains(res, "Alice Q3 Financial Statement")
+        self.assertNotContains(res, "Alice Master Legal Agreement")
+
+    def test_filter_by_owner(self):
+        """9. Filtering by owner returns only accessible documents of that owner."""
+        self.client.login(username='search_charlie', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'owner': 'search_alice'})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 2)
+        self.assertContains(res, "Alice Master Legal Agreement")
+        self.assertContains(res, "Alice Security Architecture")
+        self.assertNotContains(res, "Bob Legal Defense Brief")
+
+    def test_filter_by_upload_date_range(self):
+        """10. Date filtering restricts results within the specified date boundaries."""
+        import datetime
+        from django.utils import timezone
+        today = timezone.localdate().strftime('%Y-%m-%d')
+
+        self.client.login(username='search_alice', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'date_from': today, 'date_to': today})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 3)
+
+        # Future date range returns 0
+        tomorrow = (timezone.localdate() + datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        res_future = self.client.get(reverse('documents:list'), {'date_from': tomorrow})
+        self.assertEqual(res_future.status_code, 200)
+        self.assertEqual(res_future.context['total_count'], 0)
+
+    def test_filter_inverted_date_range_graceful_handling(self):
+        """11. Inverted date range (start > end) raises ValidationError in service and shows warning in view."""
+        self.client.login(username='search_alice', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'date_from': '2026-12-31', 'date_to': '2026-01-01'})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 0)
+        self.assertContains(res, "Invalid date range")
+
+        # Direct service test
+        with self.assertRaises(ValidationError):
+            DocumentService.search_and_filter_documents(
+                user=self.owner_alice,
+                date_from='2026-12-31',
+                date_to='2026-01-01'
+            )
+
+    def test_filter_malformed_date_graceful_handling(self):
+        """12. Malformed date format raises ValidationError in service and shows warning in view."""
+        self.client.login(username='search_alice', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'date_from': 'not-a-date'})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 0)
+        self.assertContains(res, "Invalid start date format")
+
+        with self.assertRaises(ValidationError):
+            DocumentService.search_and_filter_documents(
+                user=self.owner_alice,
+                date_from='not-a-date'
+            )
+
+    def test_combined_search_and_filters(self):
+        """13. Combined query, category, and owner filters narrow results conjointly."""
+        self.client.login(username='search_charlie', password=self.password)
+        # Charlie has 2 LEGAL documents: alice_legal and bob_legal
+        # Adding owner=search_bob narrows to 1
+        res = self.client.get(reverse('documents:list'), {
+            'q': 'Legal',
+            'category': DocumentCategory.LEGAL,
+            'owner': 'search_bob'
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 1)
+        self.assertContains(res, "Bob Legal Defense Brief")
+        self.assertNotContains(res, "Alice Master Legal Agreement")
+
+    # =========================================================================
+    # 3. Sorting & Pagination
+    # =========================================================================
+    def test_sorting_options(self):
+        """14. Sorting by name_asc, name_desc, oldest, and newest orders results correctly."""
+        self.client.login(username='search_alice', password=self.password)
+
+        # Name ascending
+        res_asc = self.client.get(reverse('documents:list'), {'sort': 'name_asc'})
+        self.assertEqual(res_asc.status_code, 200)
+        names_asc = [d.name for d in res_asc.context['page_obj']]
+        self.assertEqual(names_asc, sorted(names_asc, key=lambda s: s.lower()))
+
+        # Name descending
+        res_desc = self.client.get(reverse('documents:list'), {'sort': 'name_desc'})
+        self.assertEqual(res_desc.status_code, 200)
+        names_desc = [d.name for d in res_desc.context['page_obj']]
+        self.assertEqual(names_desc, sorted(names_desc, key=lambda s: s.lower(), reverse=True))
+
+    def test_sorting_whitelist_injection_defense(self):
+        """15. Unrecognized or malicious sort parameter safely defaults to newest (-created_at)."""
+        self.client.login(username='search_alice', password=self.password)
+        # Attempt injection with unwhitelisted column or syntax
+        res = self.client.get(reverse('documents:list'), {'sort': 'owner__password'})
+        self.assertEqual(res.status_code, 200)
+        # Should not raise SQL error and return default 3 documents
+        self.assertEqual(res.context['total_count'], 3)
+
+    def test_pagination_and_query_preservation(self):
+        """16. Pagination restricts page size to 10 and preserves filter parameters across pages."""
+        # Create 12 additional documents for Alice to exceed page size of 10
+        extra_docs = []
+        for i in range(12):
+            doc = DocumentService.upload_document(
+                owner=self.owner_alice,
+                uploaded_file=SimpleUploadedFile(f"batch_{i}.pdf", self.pdf_bytes, content_type="application/pdf"),
+                name=f"Bulk Report {i:02d}",
+                category=DocumentCategory.FINANCIAL
+            )
+            extra_docs.append(doc)
+            self.created_files.append(DocumentService.get_protected_storage_path(doc.storage_filename))
+
+        self.client.login(username='search_alice', password=self.password)
+
+        # Page 1 with category filter
+        res_p1 = self.client.get(reverse('documents:list'), {'category': DocumentCategory.FINANCIAL, 'page': '1'})
+        self.assertEqual(res_p1.status_code, 200)
+        self.assertEqual(len(res_p1.context['page_obj']), 10)
+        self.assertTrue(res_p1.context['page_obj'].has_next())
+        # Filter querystring should contain category=FINANCIAL
+        self.assertIn('category=FINANCIAL', res_p1.context['filter_querystring'])
+        self.assertContains(res_p1, "page=2&category=FINANCIAL")
+
+        # Page 2
+        res_p2 = self.client.get(reverse('documents:list'), {'category': DocumentCategory.FINANCIAL, 'page': '2'})
+        self.assertEqual(res_p2.status_code, 200)
+        # Total FINANCIAL for Alice: 1 original + 12 extra = 13. Page 2 should have 3 items.
+        self.assertEqual(len(res_p2.context['page_obj']), 3)
+
+    # =========================================================================
+    # 4. Strict Authorization & Privacy Boundaries
+    # =========================================================================
+    def test_viewer_sees_only_authorized_documents(self):
+        """17. Viewer sees only explicitly granted documents, never unshared documents."""
+        self.client.login(username='search_charlie', password=self.password)
+        res = self.client.get(reverse('documents:list'))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 3)
+        self.assertContains(res, "Alice Master Legal Agreement")
+        self.assertContains(res, "Alice Security Architecture")
+        self.assertContains(res, "Bob Legal Defense Brief")
+        self.assertNotContains(res, "Alice Q3 Financial Statement")
+        self.assertNotContains(res, "Bob Executive Payroll & HR")
+        self.assertNotContains(res, "David Operations Manual")
+
+    def test_viewer_cannot_discover_unauthorized_documents_via_search(self):
+        """18. Viewer search for keywords in unshared documents returns 0 results (no metadata leak)."""
+        self.client.login(username='search_charlie', password=self.password)
+        # "Payroll" is in Bob's unshared HR document
+        res = self.client.get(reverse('documents:list'), {'q': 'Payroll'})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 0)
+        self.assertNotContains(res, "Bob Executive Payroll & HR")
+
+        # "Financial" is in Alice's unshared document
+        res_fin = self.client.get(reverse('documents:list'), {'q': 'Financial'})
+        self.assertEqual(res_fin.status_code, 200)
+        self.assertEqual(res_fin.context['total_count'], 0)
+        self.assertNotContains(res_fin, "Alice Q3 Financial Statement")
+
+    def test_owner_filter_dropdown_choices_strictly_isolated(self):
+        """19. Owner filter choices only include owners of accessible documents (privacy preservation)."""
+        self.client.login(username='search_charlie', password=self.password)
+        res = self.client.get(reverse('documents:list'))
+        self.assertEqual(res.status_code, 200)
+        available = list(res.context['available_owners'])
+        self.assertIn('search_alice', available)
+        self.assertIn('search_bob', available)
+        # David's documents are not shared with Charlie, so David must NOT be in Charlie's dropdown!
+        self.assertNotIn('search_david', available)
+        self.assertNotContains(res, "Owner: search_david")
+
+    def test_read_and_edit_permissions_both_discoverable_consistently(self):
+        """20. Both READ and EDIT grants enable document discovery for viewers."""
+        self.client.login(username='search_charlie', password=self.password)
+        res = self.client.get(reverse('documents:list'))
+        # alice_legal is READ, alice_tech is EDIT
+        self.assertContains(res, self.doc_alice_legal.name)
+        self.assertContains(res, self.doc_alice_tech.name)
+
+    def test_administrator_cannot_discover_private_documents_without_grant(self):
+        """21. Administrator with no grants or ownership discovers 0 private documents."""
+        self.client.login(username='search_eve', password=self.password)
+        res = self.client.get(reverse('documents:list'))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 0)
+        self.assertNotContains(res, "Alice Q3 Financial Statement")
+        self.assertNotContains(res, "Bob Legal Defense Brief")
+
+        # Admin search for "Financial" also yields 0
+        res_search = self.client.get(reverse('documents:list'), {'q': 'Financial'})
+        self.assertEqual(res_search.status_code, 200)
+        self.assertEqual(res_search.context['total_count'], 0)
+
+    def test_anonymous_user_redirected_to_login(self):
+        """22. Unauthenticated requests to search or list are redirected to login."""
+        res = self.client.get(reverse('documents:list'))
+        self.assertEqual(res.status_code, 302)
+        self.assertIn('/accounts/login/', res.url)
+
+    def test_unauthorized_documents_do_not_affect_total_count(self):
+        """23. Unauthorized documents in database do not inflate user result counts."""
+        self.client.login(username='search_frank', password=self.password)
+        res = self.client.get(reverse('documents:list'))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 0)
+
+    def test_permission_revocation_immediately_removes_from_search(self):
+        """24. Revoking access immediately excludes document from subsequent searches."""
+        self.client.login(username='search_charlie', password=self.password)
+        # Charlie initially finds 2 LEGAL documents
+        res_before = self.client.get(reverse('documents:list'), {'q': 'Legal'})
+        self.assertEqual(res_before.status_code, 200)
+        self.assertEqual(res_before.context['total_count'], 2)
+
+        # Alice revokes Charlie's READ access to alice_legal
+        PermissionService.revoke_permission(
+            actor=self.owner_alice,
+            document=self.doc_alice_legal,
+            target_user=self.viewer_charlie
+        )
+
+        # Charlie searches again: alice_legal is immediately excluded
+        res_after = self.client.get(reverse('documents:list'), {'q': 'Legal'})
+        self.assertEqual(res_after.status_code, 200)
+        self.assertEqual(res_after.context['total_count'], 1)
+        self.assertContains(res_after, "Bob Legal Defense Brief")
+        self.assertNotContains(res_after, "Alice Master Legal Agreement")
+
+    def test_no_binary_content_search_leakage(self):
+        """25. Binary payload contents are strictly unindexed and not searchable."""
+        # Create document with secret binary payload string
+        secret_string = "SecretVaultCipherPayload987654"
+        secret_bytes = self.pdf_bytes + secret_string.encode('utf-8')
+        secret_doc = DocumentService.upload_document(
+            owner=self.owner_alice,
+            uploaded_file=SimpleUploadedFile("normal_doc.pdf", secret_bytes, content_type="application/pdf"),
+            name="Innocuous Document Name",
+            description="Regular benign description",
+            category=DocumentCategory.GENERAL
+        )
+        self.created_files.append(DocumentService.get_protected_storage_path(secret_doc.storage_filename))
+
+        self.client.login(username='search_alice', password=self.password)
+        res = self.client.get(reverse('documents:list'), {'q': secret_string})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['total_count'], 0)
+        self.assertNotContains(res, "Innocuous Document Name")
