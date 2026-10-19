@@ -21,7 +21,7 @@ DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY:
     if DEBUG:
-        SECRET_KEY = 'django-insecure-dev-fallback-key-for-local-development-only'
+        SECRET_KEY = 'django-insecure-dev-fallback-key-for-local-development-only'  # nosec B105
     else:
         from django.core.exceptions import ImproperlyConfigured
         raise ImproperlyConfigured("The SECRET_KEY environment variable must be set in production.")

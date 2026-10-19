@@ -239,8 +239,8 @@ def document_download_view(request, doc_id):
                     reason=str(exc),
                     request=request
                 )
-        except Exception:
-            pass
+        except Exception as audit_err:
+            logger.warning("Audit denial logging failed: %s", audit_err)
         raise exc
 
     # Record persistent audit event for authorized file download initiation

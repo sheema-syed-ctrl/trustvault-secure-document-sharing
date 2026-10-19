@@ -83,7 +83,7 @@ class AuditService:
             if isinstance(val, (str, int, float, bool)) or val is None:
                 val_str = str(val).lower()
                 # Redact local system drive letters or directory structures
-                if any(ind in val_str for ind in ['f:\\', 'c:\\', '/var/', '/etc/', '/tmp/']):
+                if any(ind in val_str for ind in ['f:\\', 'c:\\', '/var/', '/etc/', '/tmp/']):  # nosec B108
                     continue
                 clean_dict[str(key)] = val
             elif isinstance(val, dict):
