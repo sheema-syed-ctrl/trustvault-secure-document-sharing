@@ -123,6 +123,9 @@
                                     <i class="bi bi-download"></i>
                                 </a>
                                 {% if doc.owner == user %}
+                                    <a href="{% url 'permissions:manage' doc.id %}" class="btn btn-outline-info text-dark" title="Share &amp; Permissions">
+                                        <i class="bi bi-share"></i>
+                                    </a>
                                     <a href="{% url 'documents:edit' doc.id %}" class="btn btn-outline-secondary" title="Edit Metadata">
                                         <i class="bi bi-pencil"></i>
                                     </a>

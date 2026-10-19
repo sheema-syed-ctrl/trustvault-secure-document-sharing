@@ -226,3 +226,12 @@ def document_download_view(request, doc_id):
     )
 
     return response
+
+
+@login_required
+def document_share_redirect_view(request, doc_id):
+    """
+    Convenience route redirecting to the centralized permission management view.
+    """
+    return redirect('permissions:manage', doc_id=doc_id)
+

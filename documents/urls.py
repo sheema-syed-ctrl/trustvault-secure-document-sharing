@@ -10,4 +10,5 @@ urlpatterns = [
     path('<int:doc_id>/download/', views.document_download_view, name='download'),
     path('<int:doc_id>/edit/', views.document_edit_view, name='edit'),
     path('<int:doc_id>/delete/', views.document_delete_view, name='delete'),
+    path('<int:doc_id>/share/', views.document_share_redirect_view, name='share'),
 ]
