@@ -16,6 +16,7 @@ TrustVault is an enterprise-grade secure document-sharing platform engineered to
 4. **File Signature & Magic-Byte Verification:** Uploads are validated against actual binary content signatures rather than easily spoofed client-supplied MIME types and extensions.
 5. **Real, Immutable Audit Trail:** Every sensitive operation (login, upload, view, download, edit, share, revocation, access denied) is permanently logged with timestamps, IP addresses, actor identities, and full context.
 6. **Instant Revocation:** Permission revocation takes effect immediately; cached URLs or bookmarked links cannot bypass server-side checks.
+7. **Authorized Document Discovery Engine:** Multi-factor search, filtering, and sorting strictly scoped to authorized documents; dynamic owner choices prevent user enumeration; binary file contents are excluded from indexing.
 
 ---
 
@@ -24,7 +25,7 @@ TrustVault is an enterprise-grade secure document-sharing platform engineered to
 TrustVault follows a modular Django architecture with strict separation of concerns:
 
 - `accounts/`: User identity, authentication, custom user model with strict roles (`ADMIN`, `OWNER`, `VIEWER`), and admin user management.
-- `documents/`: Document lifecycle (upload, metadata management, binary file validation, deletion, and category indexing).
+- `documents/`: Document lifecycle (upload, metadata management, binary file validation, deletion, category indexing, and authorized discovery/filtering engine).
 - `permissions/`: Object-level authorization service (`can_view`, `can_download`, `can_edit`, `can_delete`, `can_manage_access`) and sharing management.
 - `audit/`: Append-only security audit trail recording all platform operations and denied access attempts.
 - `dashboard/`: Role-specific dashboards tailored for Administrators, Document Owners, and Viewers.

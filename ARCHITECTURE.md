@@ -179,6 +179,36 @@ TrustVault is built as a highly modular monolith following the principle of leas
   - **Document Activity Log (`/audit/document/<doc_id>/`):** Restricted to Document Owners. Owners can monitor access, downloads, and permission history for their specific documents.
   - **Zero Viewer Access:** Viewers attempting to access global or document audit logs receive `HTTP 403 Forbidden`.
 
+### 11. Advanced Document Search, Filtering & Discovery Engine (Phase 08)
+- **Mandatory Authorization-First Scoping:**
+  - Every search and discovery operation begins by querying `PermissionService.get_accessible_documents(user)`.
+  - Scoping is executed at the database level before applying text keywords, category filters, date boundaries, ordering, counts, or pagination serialization.
+  - Documents where the user lacks ownership or explicit `READ`/`EDIT` permission are never retrieved from the database, preventing unauthorized discovery and information leaks.
+  - Administrators with no explicit document grants or ownership discover 0 private documents, preserving administrative isolation.
+- **Privacy-Preserving Dynamic Owner Choices:**
+  - Owner filter dropdown choices are dynamically derived strictly from `accessible_documents.values_list('owner__username', flat=True).distinct()`.
+  - Unrelated document owners are never exposed in UI options, preventing user enumeration across isolated tenant boundaries.
+- **Case-Insensitive Multi-Field Text Search:**
+  - Substring search (`icontains`) across `name`, `description`, `original_filename`, and `owner__username`.
+  - Automatic category label matching against `DocumentCategory.choices`.
+  - Queries are stripped and truncated to a safe upper limit (100 characters) to mitigate abuse.
+  - **Zero Binary Content Indexing:** Raw binary file payloads are strictly unindexed and cannot be queried via text search.
+- **Timezone-Aware Date Range Filtering:**
+  - Accepts `date_from` and `date_to` formatted as `YYYY-MM-DD`.
+  - Combines with `datetime.time.min` and `datetime.time.max` using the system timezone (`timezone.get_current_timezone()`).
+  - Validates date formats and rejects inverted ranges (`date_from > date_to`) gracefully with `ValidationError` and user-facing notifications without 500 errors.
+- **Injection-Safe Sorting Whitelist:**
+  - Sort keys are validated against an explicit whitelist: `newest` (`-created_at`), `oldest` (`created_at`), `name_asc` (`Lower('name')`), `name_desc` (`Lower('name').desc()`), and `updated` (`-updated_at`).
+  - Unrecognized or manipulated sort keys safely fallback to the default (`-created_at`), preventing SQL injection and unauthorized column enumeration.
+- **Performance Database Indexes:**
+  - `idx_doc_name` on `name` field accelerates alphabetical sorting and prefix lookups.
+  - `idx_doc_created_at_desc` on `-created_at` optimizes default chronological ordering.
+- **Bounded Pagination & State Preservation:**
+  - Page size is bounded at 10 items per page with out-of-range protection via Django's `Paginator.get_page()`.
+  - Active search, category, owner, date, and sort parameters are serialized into `filter_querystring` and preserved across pagination links.
+- **Immediate Revocation Consistency:**
+  - Because discovery directly evaluates `PermissionService.get_accessible_documents()`, access revocation immediately excludes documents from subsequent searches and result counts without stale cache lag.
+
 
 
 

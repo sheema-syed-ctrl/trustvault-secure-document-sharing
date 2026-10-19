@@ -161,5 +161,45 @@
   - Historical snapshot retention upon entity deletion.
 - Automated test count: **172 passing tests (100% success rate)** across `manage.py test` (172/172) and `pytest` (172/172).
 
-
-
+### Phase 08 — Advanced Document Search, Filtering & Discovery Engine (19 October 2026)
+- Designed and implemented authorization-first document discovery engine:
+  - Scoping is executed at the database level via `PermissionService.get_accessible_documents(user)` before applying filters, counts, or pagination.
+  - Zero metadata leakage: users cannot discover documents or metadata for unshared files.
+  - Administrators cannot view or discover private documents without an explicit grant or ownership.
+- Added database indexes in `documents/models.py` (`documents/migrations/0002_document_idx_doc_name_and_more.py`):
+  - `idx_doc_name` on `name`: accelerates title searches and alphabetical sorting.
+  - `idx_doc_created_at_desc` on `-created_at`: accelerates default reverse-chronological document ordering.
+- Implemented `DocumentService.search_and_filter_documents(user, query, category, owner_username, date_from, date_to, sort_by)`:
+  - Multi-field search across `name`, `description`, `original_filename`, `owner__username`, and category labels (`DocumentCategory.choices`).
+  - Strict query sanitization: queries stripped and capped at 100 characters to prevent query flooding.
+  - Strict binary payload exclusion: raw file bytes are unindexed and not searchable.
+  - Validated category matching against `DocumentCategory.values`.
+  - Timezone-aware date boundaries with `timezone.make_aware()`. Rejects inverted ranges (`date_from > date_to`) and malformed date strings with `ValidationError`.
+  - Whitelist-enforced sorting (`newest`, `oldest`, `name_asc`, `name_desc`, `updated`) with safe fallback preventing SQL and column injection.
+- Upgraded `document_list_view` in `documents/views.py`:
+  - Dynamically extracts available owner choices strictly from the user's accessible documents (`values_list('owner__username', flat=True).distinct()`), preventing user enumeration across isolated tenant boundaries.
+  - Gracefully catches `ValidationError` on malformed/inverted date ranges, displaying user warnings via Django messages and returning an empty queryset without 500 errors.
+  - Implements bounded pagination (10 items/page) with full filter preservation across pages via `filter_querystring`.
+- Enhanced search UI in `templates/documents/document_list.html`:
+  - Multi-factor search bar: keyword search input, category dropdown, privacy-preserving owner dropdown, upload date range controls (`date_from`, `date_to`), and sort selector.
+  - Active filter badges indicating applied criteria and matching result counts.
+  - Context-sensitive empty state differentiating between "no search results match criteria" and "no documents in vault".
+  - Clean pagination links preserving active filter query strings.
+- Implemented comprehensive security and discovery test suite `DocumentSearchAndDiscoveryTests` in `documents/tests.py` (25 automated test cases):
+  - Document name, partial, case-insensitive, original filename, and owner search.
+  - Category label and code matching.
+  - Empty query baseline preservation.
+  - Excessively long query truncation defense.
+  - Category, owner, and timezone-aware date range filtering.
+  - Inverted date range and malformed date format validation handling.
+  - Sorting options and injection whitelist defense.
+  - Bounded pagination and query string preservation across page links.
+  - Viewer isolation and zero unauthorized document discovery.
+  - Dynamic owner filter choice isolation (unshared owners excluded from dropdown).
+  - READ vs EDIT permission consistency.
+  - Administrator isolation from private documents without explicit grants.
+  - Anonymous user redirection.
+  - Immediate search exclusion upon permission revocation.
+  - Non-indexing of binary file payloads.
+- Automated test count: **197 passing tests (100% success rate)** across `manage.py test` (197/197) and `pytest` (197/197).
+- Verification checks: `manage.py check` (0 issues), `makemigrations --check` (clean), `migrate --check` (clean), `git diff --check` (clean).
