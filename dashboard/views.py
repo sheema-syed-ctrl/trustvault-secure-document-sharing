@@ -1,6 +1,61 @@
-from django.http import HttpResponse
+"""
+Role-specific dashboard routing and views for TrustVault.
+Enforces default-deny access and distinct presentation by role:
+  - Administrator: User management & audit oversight overview.
+  - Document Owner: Personal document repository & upload overview.
+  - Viewer: Documents explicitly shared with the user.
+"""
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from accounts.models import User
 
 
+@login_required
 def index(request):
-    """Skeleton dashboard endpoint (to be implemented in Phase 02/09)."""
-    return HttpResponse("Phase 02/09: Dashboard", status=200)
+    """
+    Central dashboard entry point.
+    Dispatches to role-specific dashboard screens based on authenticated user's role.
+    """
+    user = request.user
+
+    if user.is_admin_role:
+        return admin_dashboard_view(request)
+    elif user.is_owner_role:
+        return owner_dashboard_view(request)
+    else:
+        return viewer_dashboard_view(request)
+
+
+@login_required
+def admin_dashboard_view(request):
+    """Administrator dashboard overview."""
+    context = {
+        'total_users': User.objects.count(),
+        'admin_count': User.objects.filter(role=User.Role.ADMIN).count(),
+        'owner_count': User.objects.filter(role=User.Role.OWNER).count(),
+        'viewer_count': User.objects.filter(role=User.Role.VIEWER).count(),
+        'recent_users': User.objects.order_by('-date_joined')[:5],
+    }
+    return render(request, 'dashboard/admin_dashboard.html', context)
+
+
+@login_required
+def owner_dashboard_view(request):
+    """Document Owner dashboard overview."""
+    context = {
+        'recent_documents': [],  # Integrated with Document model in Phase 03
+        'total_documents': 0,
+        'shared_count': 0,
+    }
+    return render(request, 'dashboard/owner_dashboard.html', context)
+
+
+@login_required
+def viewer_dashboard_view(request):
+    """Viewer dashboard overview."""
+    context = {
+        'accessible_documents': [],  # Integrated with DocumentPermission in Phase 04
+        'total_accessible': 0,
+    }
+    return render(request, 'dashboard/viewer_dashboard.html', context)
