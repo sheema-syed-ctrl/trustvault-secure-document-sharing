@@ -77,6 +77,12 @@ class DocumentPermission(models.Model):
                 raise ValidationError(
                     "Redundant permission: Document owner already possesses inherent, authoritative access."
                 )
+        if self.document_id and self.granted_by_id:
+            # Only the document owner is authorized to grant access to their document
+            if self.document.owner_id != self.granted_by_id:
+                raise ValidationError(
+                    "Unauthorized grantor: Only the document owner can grant permissions for this document."
+                )
         if self.permission_type not in PermissionType.values:
             raise ValidationError(f"Invalid permission type: '{self.permission_type}'.")
 

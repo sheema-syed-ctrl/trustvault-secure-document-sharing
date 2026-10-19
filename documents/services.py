@@ -3,6 +3,7 @@ Document service layer for TrustVault.
 Encapsulates all document business logic, storage operations, and transaction boundaries.
 """
 
+import logging
 import os
 import uuid
 from pathlib import Path
@@ -12,6 +13,8 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from accounts.services import RBACService
 from .models import Document, DocumentCategory
 from .validators import validate_file_upload
+
+logger = logging.getLogger('trustvault')
 
 
 class DocumentService:
@@ -121,19 +124,42 @@ class DocumentService:
         """
         Deletes a document record and safely removes the physical storage file.
         Strictly restricted to the document owner.
+
+        Consistency guarantee:
+          - Database record deletion is executed within an atomic transaction.
+          - Physical file cleanup is deferred until the database transaction commits
+            successfully via transaction.on_commit().
+          - If the database transaction fails/rolls back, the disk file is preserved.
+          - If disk file cleanup encounters an error post-commit, an error log is emitted
+            for administrative/audit reconciliation without rolling back database state.
         """
         from permissions.services import PermissionService
         if not PermissionService.can_delete(actor, document):
             raise PermissionDenied("Access denied: Only the document owner can delete this document.")
 
         target_path = cls.get_protected_storage_path(document.storage_filename)
+        storage_filename = document.storage_filename
+        doc_id = document.pk
 
-        with transaction.atomic():
-            document.delete()
-            # Remove physical file from private storage
+        def cleanup_physical_file():
             if target_path.exists():
                 try:
                     os.remove(target_path)
-                except OSError:
-                    pass
+                    logger.info(f"Purged storage file {storage_filename} for deleted document {doc_id}.")
+                except OSError as err:
+                    logger.error(
+                        f"CRITICAL: Failed to remove physical file from storage post-commit. "
+                        f"Document ID: {doc_id}, Storage File: {storage_filename}, Path: {target_path}. "
+                        f"Error: {err}"
+                    )
+            else:
+                logger.warning(
+                    f"Physical storage file already absent during deletion cleanup. "
+                    f"Document ID: {doc_id}, Storage File: {storage_filename}"
+                )
+
+        with transaction.atomic():
+            document.delete()
+            transaction.on_commit(cleanup_physical_file)
+
         return True

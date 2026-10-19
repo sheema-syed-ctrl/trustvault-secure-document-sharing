@@ -465,3 +465,98 @@ class DocumentPermissionEngineTests(TestCase):
         # Eve (Admin) queries accessible documents -> empty unless granted
         eve_docs = PermissionService.get_accessible_documents(self.admin_eve)
         self.assertNotIn(self.alice_doc, eve_docs)
+
+    # -------------------------------------------------------------------------
+    # 9. Django Admin Privilege Boundary & Model Grantor Validation
+    # -------------------------------------------------------------------------
+    def test_non_owner_grantor_rejected_by_model_validation(self):
+        """25. DocumentPermission raises ValidationError if grantor is not the document owner."""
+        perm = DocumentPermission(
+            document=self.alice_doc,
+            user=self.viewer_bob,
+            permission_type=PermissionType.READ,
+            granted_by=self.owner_david
+        )
+        with self.assertRaises(ValidationError) as ctx:
+            perm.full_clean()
+        self.assertIn("Only the document owner can grant permissions", str(ctx.exception))
+
+    def test_admin_grantor_rejected_by_model_validation(self):
+        """26. Administrator cannot be grantor of permissions for another user's document."""
+        perm = DocumentPermission(
+            document=self.alice_doc,
+            user=self.viewer_bob,
+            permission_type=PermissionType.READ,
+            granted_by=self.admin_eve
+        )
+        with self.assertRaises(ValidationError) as ctx:
+            perm.full_clean()
+        self.assertIn("Only the document owner can grant permissions", str(ctx.exception))
+
+    def test_admin_cannot_add_permission_via_django_admin(self):
+        """27. Administrator cannot add DocumentPermission records via Django Admin."""
+        self.admin_eve.is_superuser = True
+        self.admin_eve.save()
+        self.client.login(username='eve_admin', password=self.password)
+
+        # GET /admin/permissions/documentpermission/add/
+        res = self.client.get('/admin/permissions/documentpermission/add/')
+        self.assertEqual(res.status_code, 403)
+
+        # POST /admin/permissions/documentpermission/add/
+        res_post = self.client.post('/admin/permissions/documentpermission/add/', {
+            'document': self.alice_doc.id,
+            'user': self.admin_eve.id,
+            'permission_type': PermissionType.EDIT,
+        })
+        self.assertEqual(res_post.status_code, 403)
+        self.assertFalse(DocumentPermission.objects.filter(document=self.alice_doc, user=self.admin_eve).exists())
+
+    def test_admin_cannot_change_or_delete_permission_via_django_admin(self):
+        """28. Administrator cannot edit or delete DocumentPermission records via Django Admin."""
+        perm = DocumentPermission.objects.create(
+            document=self.alice_doc,
+            user=self.viewer_bob,
+            permission_type=PermissionType.READ,
+            granted_by=self.owner_alice
+        )
+        self.admin_eve.is_superuser = True
+        self.admin_eve.save()
+        self.client.login(username='eve_admin', password=self.password)
+
+        # Change attempt returns 403
+        change_url = f'/admin/permissions/documentpermission/{perm.id}/change/'
+        res_change = self.client.post(change_url, {
+            'permission_type': PermissionType.EDIT,
+        })
+        self.assertEqual(res_change.status_code, 403)
+        perm.refresh_from_db()
+        self.assertEqual(perm.permission_type, PermissionType.READ)
+
+        # Delete attempt returns 403
+        delete_url = f'/admin/permissions/documentpermission/{perm.id}/delete/'
+        res_delete = self.client.post(delete_url, {'post': 'yes'})
+        self.assertEqual(res_delete.status_code, 403)
+        self.assertTrue(DocumentPermission.objects.filter(pk=perm.id).exists())
+
+    def test_admin_cannot_modify_documents_via_django_admin(self):
+        """29. Administrator cannot add, edit, or delete Document records via Django Admin."""
+        self.admin_eve.is_superuser = True
+        self.admin_eve.save()
+        self.client.login(username='eve_admin', password=self.password)
+
+        # Add document blocked (HTTP 403)
+        res_add = self.client.get('/admin/documents/document/add/')
+        self.assertEqual(res_add.status_code, 403)
+
+        # Change document blocked (HTTP 403)
+        res_change = self.client.post(f'/admin/documents/document/{self.alice_doc.id}/change/', {
+            'name': 'Tampered Name',
+            'owner': self.admin_eve.id,
+        })
+        self.assertEqual(res_change.status_code, 403)
+
+        # Delete document blocked (HTTP 403)
+        res_delete = self.client.post(f'/admin/documents/document/{self.alice_doc.id}/delete/', {'post': 'yes'})
+        self.assertEqual(res_delete.status_code, 403)
+        self.assertTrue(Document.objects.filter(pk=self.alice_doc.id).exists())

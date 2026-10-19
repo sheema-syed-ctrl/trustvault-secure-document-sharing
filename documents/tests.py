@@ -361,10 +361,73 @@ class DocumentManagementTests(TestCase):
         self.assertTrue(target_path.exists())
 
         self.client.login(username='owner_alice', password=self.password)
-        response = self.client.post(reverse('documents:delete', args=[doc.id]))
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse('documents:delete', args=[doc.id]))
         self.assertRedirects(response, reverse('documents:list'))
 
         # DB record removed
         self.assertFalse(Document.objects.filter(pk=doc.id).exists())
         # Disk file removed
         self.assertFalse(target_path.exists())
+
+    def test_deletion_preserves_file_when_transaction_rolls_back(self):
+        """Dual-state consistency: If database transaction rolls back, physical file is preserved."""
+        from django.db import transaction
+        doc = DocumentService.upload_document(
+            owner=self.owner_alice,
+            uploaded_file=SimpleUploadedFile("rollback.pdf", self.valid_pdf_bytes, content_type="application/pdf"),
+            name="Rollback Test Doc"
+        )
+        target_path = DocumentService.get_protected_storage_path(doc.storage_filename)
+        self.created_files.append(target_path)
+        self.assertTrue(target_path.exists())
+
+        doc_id = doc.id
+        # Simulate transaction rollback during delete
+        try:
+            with transaction.atomic():
+                DocumentService.delete_document(doc, self.owner_alice)
+                raise RuntimeError("Simulated database failure during deletion transaction")
+        except RuntimeError:
+            pass
+
+        # Transaction rolled back: DB record must still exist
+        self.assertTrue(Document.objects.filter(pk=doc_id).exists())
+        # File must NOT have been removed
+        self.assertTrue(target_path.exists())
+
+    def test_deletion_handles_missing_file_gracefully(self):
+        """If physical storage file is already missing on disk, DB record deletion completes cleanly."""
+        doc = DocumentService.upload_document(
+            owner=self.owner_alice,
+            uploaded_file=SimpleUploadedFile("missing.pdf", self.valid_pdf_bytes, content_type="application/pdf"),
+            name="Missing File Test Doc"
+        )
+        target_path = DocumentService.get_protected_storage_path(doc.storage_filename)
+        # Pre-delete the file to simulate missing disk file
+        if target_path.exists():
+            os.remove(target_path)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            result = DocumentService.delete_document(doc, self.owner_alice)
+
+        self.assertTrue(result)
+        self.assertFalse(Document.objects.filter(pk=doc.id).exists())
+
+    def test_deletion_handles_disk_removal_error_gracefully(self):
+        """If os.remove raises OSError during post-commit cleanup, it is caught and logged."""
+        from unittest.mock import patch
+        doc = DocumentService.upload_document(
+            owner=self.owner_alice,
+            uploaded_file=SimpleUploadedFile("oserror.pdf", self.valid_pdf_bytes, content_type="application/pdf"),
+            name="OSError Test Doc"
+        )
+        target_path = DocumentService.get_protected_storage_path(doc.storage_filename)
+        self.created_files.append(target_path)
+
+        with patch('documents.services.os.remove', side_effect=OSError("Access denied simulation")):
+            with self.captureOnCommitCallbacks(execute=True):
+                result = DocumentService.delete_document(doc, self.owner_alice)
+
+        self.assertTrue(result)
+        self.assertFalse(Document.objects.filter(pk=doc.id).exists())
