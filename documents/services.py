@@ -113,7 +113,7 @@ class DocumentService:
                     destination.write(chunk)
             written_to_disk = True
 
-            # 5. Atomic Database Record Creation
+            # 5. Atomic Database Record Creation & Audit Event
             with transaction.atomic():
                 doc = Document.objects.create(
                     name=name.strip(),
@@ -126,6 +126,8 @@ class DocumentService:
                     mime_type=file_meta['mime_type'],
                     sha256_hash=file_meta['sha256']
                 )
+                from audit.services import AuditService
+                AuditService.log_document_uploaded(actor=owner, document=doc)
                 return doc
 
         except Exception as exc:
@@ -154,10 +156,14 @@ class DocumentService:
         if not PermissionService.can_edit(actor, document):
             raise PermissionDenied("Access denied: You do not have authorization to edit this document.")
 
-        document.name = name.strip()
-        document.description = description.strip()
-        document.category = category
-        document.save(update_fields=['name', 'description', 'category', 'updated_at'])
+        with transaction.atomic():
+            document.name = name.strip()
+            document.description = description.strip()
+            document.category = category
+            document.save(update_fields=['name', 'description', 'category', 'updated_at'])
+            from audit.services import AuditService
+            AuditService.log_document_updated(actor=actor, document=document)
+
         return document
 
     @classmethod
@@ -168,6 +174,7 @@ class DocumentService:
 
         Consistency guarantee:
           - Database record deletion is executed within an atomic transaction.
+          - Audit log record is captured within the same atomic transaction.
           - Physical file cleanup is deferred until the database transaction commits
             successfully via transaction.on_commit().
           - If the database transaction fails/rolls back, the disk file is preserved.
@@ -181,6 +188,7 @@ class DocumentService:
         target_path = cls.get_protected_storage_path(document.storage_filename)
         storage_filename = document.storage_filename
         doc_id = document.pk
+        doc_name = document.name
 
         def cleanup_physical_file():
             if target_path.exists():
@@ -200,6 +208,12 @@ class DocumentService:
                 )
 
         with transaction.atomic():
+            from audit.services import AuditService
+            AuditService.log_document_deleted(
+                actor=actor,
+                document_id=doc_id,
+                document_name=doc_name
+            )
             document.delete()
             transaction.on_commit(cleanup_physical_file)
 

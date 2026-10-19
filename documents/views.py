@@ -192,7 +192,28 @@ def document_download_view(request, doc_id):
         logger.error(f"Missing storage file requested for document {doc_id} by user '{request.user.username}'.")
         raise Http404("Document storage file not found or unavailable.")
     except PermissionDenied as exc:
+        try:
+            from audit.services import AuditService
+            target_doc = Document.objects.filter(pk=doc_id).first()
+            if target_doc:
+                AuditService.log_access_denied(
+                    actor=request.user,
+                    event_type='DOCUMENT_DOWNLOADED',
+                    document=target_doc,
+                    reason=str(exc),
+                    request=request
+                )
+        except Exception:
+            pass
         raise exc
+
+    # Record persistent audit event for authorized file download initiation
+    from audit.services import AuditService
+    AuditService.log_document_downloaded(
+        actor=request.user,
+        document=document,
+        request=request
+    )
 
     # Sanitize download filename for Content-Disposition header
     safe_filename = sanitize_filename(document.original_filename)

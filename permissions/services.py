@@ -138,6 +138,13 @@ class PermissionService:
                     'granted_by': actor,
                 }
             )
+            from audit.services import AuditService
+            AuditService.log_permission_granted(
+                actor=actor,
+                document=document,
+                recipient=target_user,
+                permission_type=permission_type
+            )
 
         action = "granted" if created else "updated"
         logger.info(
@@ -190,6 +197,14 @@ class PermissionService:
             permission.permission_type = new_permission_type
             permission.granted_by = actor
             permission.save()
+            from audit.services import AuditService
+            AuditService.log_permission_updated(
+                actor=actor,
+                document=document,
+                recipient=permission.user,
+                previous_permission=old_type,
+                new_permission=new_permission_type
+            )
 
         logger.info(
             f"Permission updated: Actor '{actor.username}' (ID: {actor.pk}) changed permission "
@@ -211,19 +226,29 @@ class PermissionService:
             )
             raise PermissionDenied("Access denied: Only the document owner can revoke permissions for this document.")
 
-        deleted_count, _ = DocumentPermission.objects.filter(
-            document=document,
-            user=target_user
-        ).delete()
+        perms = list(DocumentPermission.objects.filter(document=document, user=target_user))
+        if not perms:
+            return False
 
-        if deleted_count > 0:
-            target_name = getattr(target_user, 'username', str(target_user))
-            target_pk = getattr(target_user, 'pk', 'unknown')
-            logger.info(
-                f"Permission revoked: Actor '{actor.username}' (ID: {actor.pk}) revoked access "
-                f"for '{target_name}' (ID: {target_pk}) on document {document.pk} ('{document.name}')."
-            )
-        return deleted_count > 0
+        with transaction.atomic():
+            for p in perms:
+                prev_perm = p.permission_type
+                p.delete()
+                from audit.services import AuditService
+                AuditService.log_permission_revoked(
+                    actor=actor,
+                    document=document,
+                    recipient=target_user,
+                    previous_permission=prev_perm
+                )
+
+        target_name = getattr(target_user, 'username', str(target_user))
+        target_pk = getattr(target_user, 'pk', 'unknown')
+        logger.info(
+            f"Permission revoked: Actor '{actor.username}' (ID: {actor.pk}) revoked access "
+            f"for '{target_name}' (ID: {target_pk}) on document {document.pk} ('{document.name}')."
+        )
+        return True
 
     @classmethod
     def revoke_permission_by_id(cls, actor, document: Document, permission_id: int) -> bool:
@@ -254,7 +279,18 @@ class PermissionService:
 
         target_name = perm.user.username
         target_pk = perm.user.pk
-        perm.delete()
+        target_user = perm.user
+        prev_perm = perm.permission_type
+
+        with transaction.atomic():
+            perm.delete()
+            from audit.services import AuditService
+            AuditService.log_permission_revoked(
+                actor=actor,
+                document=document,
+                recipient=target_user,
+                previous_permission=prev_perm
+            )
 
         logger.info(
             f"Permission revoked: Actor '{actor.username}' (ID: {actor.pk}) revoked access "
