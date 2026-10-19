@@ -31,34 +31,70 @@ def document_list_view(request):
       - Document Owners see their owned documents.
       - Users with explicit READ or EDIT grants see shared documents.
       - Administrators see only documents they own or have been explicitly granted.
+    Supports comprehensive search, multi-factor filtering, injection-safe sorting, and pagination.
     """
     user = request.user
-    category_filter = request.GET.get('category', '').strip()
     search_query = request.GET.get('q', '').strip()
+    category_filter = request.GET.get('category', '').strip()
+    owner_filter = request.GET.get('owner', '').strip()
+    date_from_raw = request.GET.get('date_from', '').strip()
+    date_to_raw = request.GET.get('date_to', '').strip()
+    sort_by = request.GET.get('sort', 'newest').strip()
 
-    # Query authorized documents using centralized PermissionService
-    documents_qs = PermissionService.get_accessible_documents(user)
+    # Determine available owners ONLY from user's accessible documents (privacy isolation)
+    accessible_docs = PermissionService.get_accessible_documents(user)
+    available_owners = (
+        accessible_docs
+        .values_list('owner__username', flat=True)
+        .distinct()
+        .order_by('owner__username')
+    )
 
-    if category_filter:
-        documents_qs = documents_qs.filter(category=category_filter)
-
-    if search_query:
-        documents_qs = documents_qs.filter(
-            Q(name__icontains=search_query) |
-            Q(description__icontains=search_query) |
-            Q(original_filename__icontains=search_query)
+    date_error = None
+    try:
+        documents_qs = DocumentService.search_and_filter_documents(
+            user=user,
+            query=search_query,
+            category=category_filter,
+            owner_username=owner_filter,
+            date_from=date_from_raw or None,
+            date_to=date_to_raw or None,
+            sort_by=sort_by
         )
+    except ValidationError as exc:
+        date_error = exc.message
+        messages.warning(request, f"Search filter notice: {exc.message}")
+        documents_qs = Document.objects.none()
 
     paginator = Paginator(documents_qs, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Preserve active filter parameters across pagination links
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
+    filter_querystring = query_params.urlencode()
+
+    has_active_filters = bool(
+        search_query or category_filter or owner_filter or
+        date_from_raw or date_to_raw or (sort_by and sort_by != 'newest')
+    )
+
     return render(request, 'documents/document_list.html', {
         'page_obj': page_obj,
         'categories': DocumentCategory.choices,
+        'available_owners': available_owners,
         'selected_category': category_filter,
+        'selected_owner': owner_filter,
+        'date_from': date_from_raw,
+        'date_to': date_to_raw,
+        'sort_by': sort_by,
         'search_query': search_query,
         'total_count': documents_qs.count(),
+        'filter_querystring': filter_querystring,
+        'has_active_filters': has_active_filters,
+        'date_error': date_error,
     })
 
 
