@@ -203,3 +203,36 @@
   - Non-indexing of binary file payloads.
 - Automated test count: **197 passing tests (100% success rate)** across `manage.py test` (197/197) and `pytest` (197/197).
 - Verification checks: `manage.py check` (0 issues), `makemigrations --check` (clean), `migrate --check` (clean), `git diff --check` (clean).
+
+### Phase 09 — Role-Specific Dashboards & Admin Monitoring (19 October 2026)
+- Designed and implemented role-tailored dashboard workspaces enforcing default-deny semantics and strict privilege boundaries:
+  - Central dispatcher `index(request)` routes users based on verified role (`is_admin_role`, `is_owner_role`, `is_viewer_role`).
+  - Direct endpoint authorization: `/dashboard/admin/` (`@admin_required`), `/dashboard/owner/` (`@owner_required`), `/dashboard/viewer/` (`@login_required`). Unauthenticated requests redirect to login; unauthorized cross-role requests raise `PermissionDenied` (HTTP 403).
+- **Administrator Control Panel (`admin_dashboard_view` & `templates/dashboard/admin_dashboard.html`)**:
+  - System-wide operational health metrics: total users, active users, inactive users, role distribution (admin/owner/viewer), registered document count, total active sharing permissions.
+  - Security monitoring: dedicated `security_denial_count` measuring unauthorized access attempts (`AuditEventType.SECURITY_ACCESS_DENIED`), conditional alert banner displaying recent access denials with client IP, actor, attempted document, and denial reason.
+  - Bounded recent platform activity feed (`[:10]`) rendering safe audit metadata without leaking sensitive tokens or credentials.
+  - Recently registered users overview (`[:5]`) with role badges and edit management links.
+  - Strict administrative boundary: platform governance without document content or file download bypass; private file downloads and file bodies remain inaccessible without explicit document ownership or authorization grant.
+- **Document Owner Workspace (`owner_dashboard_view` & `templates/dashboard/owner_dashboard.html`)**:
+  - Scoped data isolation: all metrics, counts, listings, and activity events strictly restricted to `request.user`. Unrelated owners' documents and activities are excluded at the database layer.
+  - Primary metric cards: total owned documents, shared documents count (`permissions__isnull=False.distinct()`), active collaborator grants count with breakdown into `READ` vs `EDIT`.
+  - Category distribution aggregation: ORM query `values('category').annotate(count=Count('id'))` mapped to all 5 categories (`FINANCIAL`, `LEGAL`, `TECHNICAL`, `HR`, `GENERAL`) with direct filtering links to `documents:list`.
+  - Recent uploaded documents table bounded to 5, annotated with `active_shares = Count('permissions')`, displaying permitted actions: View Details, Download, Share & Manage Permissions, Edit Metadata, and Document Activity History.
+  - Owner-scoped audit ledger: bounded feed (`[:10]`) displaying chronological events touching the owner's documents or performed by the owner.
+- **Viewer Workspace (`viewer_dashboard_view` & `templates/dashboard/viewer_dashboard.html`)**:
+  - Granular access control: queried strictly through live authorization service `PermissionService.get_accessible_documents(user)`.
+  - Metrics: total accessible documents count, read-only count, edit-permitted count.
+  - Single-query permission mapping: queries `DocumentPermission.objects.filter(user=user, document__in=accessible_docs)` to eliminate N+1 queries.
+  - Accessible documents table: displays Document Name, Owner username badge, Category badge, Formatted Size, and explicit Permission Badges (`READ` vs `EDIT`).
+  - Strict capability restrictions: Viewers with READ permission receive only Details and Download buttons; Viewers with EDIT permission receive Details, Download, and Edit Metadata buttons; Delete and Share actions are strictly suppressed in the UI and blocked on the server.
+  - Immediate revocation consistency: revoked permissions immediately remove documents from viewer metrics and tables on next request.
+- Implemented comprehensive automated test suite in `dashboard/tests.py` with 35 test cases:
+  - `DashboardRoutingTests` (4 tests): unauthenticated redirect, role-based dispatching to admin, owner, viewer dashboards.
+  - `DashboardAccessControlTests` (9 tests): anonymous rejection, role boundaries, viewer/owner HTTP 403 on admin endpoint, viewer HTTP 403 on owner endpoint, authorized access HTTP 200.
+  - `AdminDashboardTests` (7 tests): active/inactive/total user metrics, role counts, document and permission totals, security denial metrics and banner, bounded activity feed, no unauthorized download link leakage, bounded recent users.
+  - `OwnerDashboardTests` (8 tests): strict owner isolation, shared count, READ vs EDIT breakdown, all 5 category counts, bounded recent documents, owner-scoped activity ledger, authorized action buttons, zero-document edge case.
+  - `ViewerDashboardTests` (7 tests): accessible documents isolation, READ vs EDIT counts, READ badge & action restrictions (no edit), EDIT badge & edit action, suppression of delete and share actions, empty state, immediate revocation consistency.
+- Accelerated test execution via `@override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])` on `BaseDashboardTestCase`.
+- Automated test count: **232 passing tests (100% success rate)** across all test suites (Django: 232/232, pytest: 232/232).
+- Verification checks: `manage.py check` (0 issues), `makemigrations --check` (clean), `migrate --check` (clean), `git diff --check` (clean).
