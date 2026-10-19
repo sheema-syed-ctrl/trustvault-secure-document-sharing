@@ -514,3 +514,30 @@ class ViewerDashboardTests(BaseDashboardTestCase):
         accessible_names = [d.name for d in response.context['accessible_documents']]
         self.assertNotIn("Q3 Financial Overview", accessible_names)
         self.assertIn("Cloud Security Architecture", accessible_names)
+
+    def test_viewer_with_edit_permission_cannot_delete_share_or_manage_permissions(self):
+        """Viewers with EDIT permission cannot delete documents, share documents, or manage permissions."""
+        # 1. Service-level evaluation: Carla has EDIT on doc_tech, but lacks deletion and management rights
+        self.assertTrue(PermissionService.can_read(self.viewer_1, self.doc_tech))
+        self.assertTrue(PermissionService.can_edit(self.viewer_1, self.doc_tech))
+        self.assertFalse(PermissionService.can_delete(self.viewer_1, self.doc_tech))
+        self.assertFalse(PermissionService.can_manage_permissions(self.viewer_1, self.doc_tech))
+
+        # 2. View-level: Document deletion rejected with HTTP 403 Forbidden
+        delete_url = reverse('documents:delete', kwargs={'doc_id': self.doc_tech.pk})
+        del_resp = self.client.post(delete_url)
+        self.assertEqual(del_resp.status_code, 403)
+        self.assertTrue(Document.objects.filter(pk=self.doc_tech.pk).exists())
+
+        # 3. View-level: Permission management view rejected with HTTP 403 Forbidden
+        manage_url = reverse('permissions:manage', kwargs={'doc_id': self.doc_tech.pk})
+        manage_resp = self.client.get(manage_url)
+        self.assertEqual(manage_resp.status_code, 403)
+
+        # 4. View-level: Permission grant endpoint rejected with HTTP 403 Forbidden
+        grant_url = reverse('permissions:grant', kwargs={'doc_id': self.doc_tech.pk})
+        grant_resp = self.client.post(grant_url, {
+            'recipient_username': 'viewer_dan',
+            'permission_type': 'READ'
+        })
+        self.assertEqual(grant_resp.status_code, 403)

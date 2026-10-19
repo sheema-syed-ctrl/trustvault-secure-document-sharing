@@ -227,12 +227,12 @@
   - Accessible documents table: displays Document Name, Owner username badge, Category badge, Formatted Size, and explicit Permission Badges (`READ` vs `EDIT`).
   - Strict capability restrictions: Viewers with READ permission receive only Details and Download buttons; Viewers with EDIT permission receive Details, Download, and Edit Metadata buttons; Delete and Share actions are strictly suppressed in the UI and blocked on the server.
   - Immediate revocation consistency: revoked permissions immediately remove documents from viewer metrics and tables on next request.
-- Implemented comprehensive automated test suite in `dashboard/tests.py` with 35 test cases:
+- Implemented comprehensive automated test suite in `dashboard/tests.py` with 36 test cases:
   - `DashboardRoutingTests` (4 tests): unauthenticated redirect, role-based dispatching to admin, owner, viewer dashboards.
   - `DashboardAccessControlTests` (9 tests): anonymous rejection, role boundaries, viewer/owner HTTP 403 on admin endpoint, viewer HTTP 403 on owner endpoint, authorized access HTTP 200.
   - `AdminDashboardTests` (7 tests): active/inactive/total user metrics, role counts, document and permission totals, security denial metrics and banner, bounded activity feed, no unauthorized download link leakage, bounded recent users.
   - `OwnerDashboardTests` (8 tests): strict owner isolation, shared count, READ vs EDIT breakdown, all 5 category counts, bounded recent documents, owner-scoped activity ledger, authorized action buttons, zero-document edge case.
-  - `ViewerDashboardTests` (7 tests): accessible documents isolation, READ vs EDIT counts, READ badge & action restrictions (no edit), EDIT badge & edit action, suppression of delete and share actions, empty state, immediate revocation consistency.
+  - `ViewerDashboardTests` (8 tests): accessible documents isolation, READ vs EDIT counts, READ badge & action restrictions (no edit), EDIT badge & edit action, suppression of delete and share actions, empty state, immediate revocation consistency, and confirmation that viewers with EDIT cannot delete documents, share documents, or manage permissions (HTTP 403).
 - Accelerated test execution via `@override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])` on `BaseDashboardTestCase`.
-- Automated test count: **232 passing tests (100% success rate)** across all test suites (Django: 232/232, pytest: 232/232).
+- Automated test count: **233 passing tests (100% success rate)** across all test suites (Django: 233/233, pytest: 233/233).
 - Verification checks: `manage.py check` (0 issues), `makemigrations --check` (clean), `migrate --check` (clean), `git diff --check` (clean).
