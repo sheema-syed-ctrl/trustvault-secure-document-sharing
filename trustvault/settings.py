@@ -14,14 +14,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load environment variables from .env file if it exists
 load_dotenv(BASE_DIR / '.env')
 
-# Quick-start development settings - unsuitable for production
-SECRET_KEY = os.getenv(
-    'SECRET_KEY',
-    'django-insecure-trustvault-core-key-change-in-production-vault2026'
-)
-
 # Debug mode controlled strictly via environment variable
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
+
+# Secret key strictly loaded from environment; prohibited from falling back in production
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-dev-fallback-key-for-local-development-only'
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured("The SECRET_KEY environment variable must be set in production.")
 
 ALLOWED_HOSTS = [
     host.strip()

@@ -1,7 +1,7 @@
 # TrustVault Core Dependencies
 # Snovasys Fresher Hiring Challenge 2026
 
-Django>=5.1.0,<5.2.0
+Django>=5.2,<5.3
 python-dotenv>=1.0.1
 filetype>=1.2.0
 
