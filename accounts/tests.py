@@ -345,11 +345,15 @@ class AuthenticationAndRBACTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+from django.test import override_settings
+
+
+@override_settings(DEBUG=True)
 class SeedDemoDataCommandTests(TestCase):
     """Automated verification for the seed_demo_data management command."""
 
     def test_seed_demo_data_execution_and_idempotency(self):
-        """Verify command provisions all demo entities and runs idempotently."""
+        """Verify command provisions all demo entities, generates dynamic passwords, and runs idempotently."""
         from io import StringIO
         from django.core.management import call_command
         from documents.models import Document
@@ -362,6 +366,12 @@ class SeedDemoDataCommandTests(TestCase):
         self.assertIn('admin_demo', output)
         self.assertIn('owner_demo', output)
         self.assertIn('viewer_demo', output)
+        self.assertIn('ATTENTION: DEMO CREDENTIALS GENERATED DYNAMICALLY', output)
+
+        # Confirm hardcoded predictable passwords are NEVER rendered
+        self.assertNotIn('AdminPassword123!', output)
+        self.assertNotIn('OwnerPassword123!', output)
+        self.assertNotIn('ViewerPassword123!', output)
 
         # Verify users exist with correct roles
         admin_u = User.objects.get(username='admin_demo')
@@ -391,3 +401,102 @@ class SeedDemoDataCommandTests(TestCase):
         call_command('seed_demo_data', stdout=out2)
         output2 = out2.getvalue()
         self.assertIn('TrustVault Demo Data successfully provisioned!', output2)
+
+    def test_seed_demo_data_env_var_override_and_authentication(self):
+        """Verify environment variable password overrides work and authenticate successfully."""
+        import os
+        from unittest.mock import patch
+        from io import StringIO
+        from django.core.management import call_command
+        from django.contrib.auth import authenticate
+
+        env_overrides = {
+            'DEMO_ADMIN_PASSWORD': 'CustomAdminSecret99!@#',
+            'DEMO_OWNER_PASSWORD': 'CustomOwnerSecret99!@#',
+            'DEMO_VIEWER_PASSWORD': 'CustomViewerSecret99!@#',
+        }
+
+        with patch.dict(os.environ, env_overrides):
+            out = StringIO()
+            call_command('seed_demo_data', stdout=out)
+            output = out.getvalue()
+
+            self.assertIn('CustomAdminSecret99!@#', output)
+            self.assertIn('CustomOwnerSecret99!@#', output)
+            self.assertIn('CustomViewerSecret99!@#', output)
+
+            # Test real authentication using provisioned credentials
+            admin_auth = authenticate(username='admin_demo', password='CustomAdminSecret99!@#')
+            self.assertIsNotNone(admin_auth)
+            self.assertEqual(admin_auth.username, 'admin_demo')
+
+            owner_auth = authenticate(username='owner_demo', password='CustomOwnerSecret99!@#')
+            self.assertIsNotNone(owner_auth)
+            self.assertEqual(owner_auth.username, 'owner_demo')
+
+            viewer_auth = authenticate(username='viewer_demo', password='CustomViewerSecret99!@#')
+            self.assertIsNotNone(viewer_auth)
+            self.assertEqual(viewer_auth.username, 'viewer_demo')
+
+    def test_seed_demo_data_production_safety_gate(self):
+        """Verify demo seeder refuses execution when DEBUG=False without explicit authorization."""
+        import os
+        from unittest.mock import patch
+        from io import StringIO
+        from django.test import override_settings
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+
+        # In production without ALLOW_DEMO_SEEDING: must raise CommandError
+        with override_settings(DEBUG=False):
+            with patch.dict(os.environ, {'ALLOW_DEMO_SEEDING': ''}):
+                with self.assertRaises(CommandError) as cm:
+                    call_command('seed_demo_data', stdout=StringIO())
+                self.assertIn("Demo data seeding is prohibited in production", str(cm.exception))
+
+            # In production WITH ALLOW_DEMO_SEEDING=True: must succeed
+            with patch.dict(os.environ, {'ALLOW_DEMO_SEEDING': 'True'}):
+                out = StringIO()
+                call_command('seed_demo_data', stdout=out)
+                self.assertIn('TrustVault Demo Data successfully provisioned!', out.getvalue())
+
+    def test_seed_demo_data_clean_preserves_non_demo_users_and_documents(self):
+        """Verify --clean only purges synthetic demo users and leaves other data intact."""
+        from io import StringIO
+        from django.core.management import call_command
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from documents.models import Document, DocumentCategory
+        from documents.services import DocumentService
+
+        # Create real/independent production user and document
+        regular_owner = User.objects.create_user(
+            username='legitimate_owner',
+            email='legit@corp.example.com',
+            password='ComplexPassword123!@#',
+            role=User.Role.OWNER
+        )
+        sample_file = SimpleUploadedFile(
+            name='critical_report.txt',
+            content=b'CLASSIFIED ENTERPRISE ASSET',
+            content_type='text/plain'
+        )
+        legit_doc = DocumentService.upload_document(
+            owner=regular_owner,
+            uploaded_file=sample_file,
+            name='Critical Enterprise Asset',
+            description='Must never be purged by demo cleanup',
+            category=DocumentCategory.FINANCIAL
+        )
+
+        # Execute demo seeding with --clean
+        out = StringIO()
+        call_command('seed_demo_data', clean=True, stdout=out)
+
+        # Verify legitimate user and their document are completely preserved
+        self.assertTrue(User.objects.filter(username='legitimate_owner').exists())
+        self.assertTrue(Document.objects.filter(pk=legit_doc.pk, name='Critical Enterprise Asset').exists())
+
+        # Verify demo entities exist
+        self.assertTrue(User.objects.filter(username='admin_demo').exists())
+        self.assertTrue(User.objects.filter(username='owner_demo').exists())
+        self.assertTrue(User.objects.filter(username='viewer_demo').exists())

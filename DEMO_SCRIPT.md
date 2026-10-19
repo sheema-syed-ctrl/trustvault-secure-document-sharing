@@ -15,6 +15,9 @@ python manage.py migrate
 python manage.py seed_demo_data --clean
 python manage.py runserver
 ```
+> [!TIP]
+> Note the dynamically generated passwords displayed in your terminal output from the `seed_demo_data` command (or preset them via `$env:DEMO_ADMIN_PASSWORD="YourPassword!"`, etc.).
+
 Open your browser at `http://127.0.0.1:8000/`.
 
 ---
@@ -27,7 +30,7 @@ Open your browser at `http://127.0.0.1:8000/`.
 1. Navigate to `http://127.0.0.1:8000/accounts/login/`.
 2. Enter credentials:
    - **Username:** `admin_demo`
-   - **Password:** `AdminPassword123!`
+   - **Password:** `<Password displayed in terminal upon running seed_demo_data>`
 3. Click **Sign In**.
 
 ### Step 1.2: Inspect the Admin Control Panel (`/dashboard/`)
@@ -61,7 +64,7 @@ Open your browser at `http://127.0.0.1:8000/`.
 1. Click **Sign Out** (top right). Confirm redirection to login.
 2. Sign in as:
    - **Username:** `owner_demo`
-   - **Password:** `OwnerPassword123!`
+   - **Password:** `<Password displayed in terminal upon running seed_demo_data>`
 
 ### Step 2.2: Inspect Owner Workspace (`/dashboard/`)
 - Notice the owner-tailored dashboard:
@@ -99,7 +102,7 @@ Open your browser at `http://127.0.0.1:8000/`.
 ### Step 3.2: Verify Viewer Experience
 1. Click **Sign Out** and sign in as:
    - **Username:** `viewer_demo`
-   - **Password:** `ViewerPassword123!`
+   - **Password:** `<Password displayed in terminal upon running seed_demo_data>`
 2. Notice the Viewer Workspace (`/dashboard/`):
    - Only documents explicitly shared with `viewer_demo` appear.
    - Documents are cleanly partitioned into:

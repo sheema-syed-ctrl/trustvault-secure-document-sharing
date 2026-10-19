@@ -63,12 +63,21 @@ TrustVault provides an automated seeder that provisions demo accounts, sample do
 python manage.py seed_demo_data --clean
 ```
 
-Output credentials:
-| Role | Username | Password | Purpose |
+> [!NOTE]
+> Passwords are generated using Python's cryptographically secure `secrets` library and printed to your terminal. To provide explicit passwords instead, set environment variables before running:
+> ```powershell
+> $env:DEMO_ADMIN_PASSWORD="MyCustomAdminPass123!"
+> $env:DEMO_OWNER_PASSWORD="MyCustomOwnerPass123!"
+> $env:DEMO_VIEWER_PASSWORD="MyCustomViewerPass123!"
+> python manage.py seed_demo_data --clean
+> ```
+
+Output account reference:
+| Role | Username | Password Provisioning | Purpose |
 | :--- | :--- | :--- | :--- |
-| **Administrator** | `admin_demo` | `AdminPassword123!` | System monitoring, user management, global audit trail |
-| **Document Owner**| `owner_demo` | `OwnerPassword123!` | Upload documents, grant/update/revoke shares |
-| **Viewer** | `viewer_demo`| `ViewerPassword123!`| Access shared documents, download, view permissions |
+| **Administrator** | `admin_demo` | *Output dynamically in terminal* | System monitoring, user management, global audit trail |
+| **Document Owner**| `owner_demo` | *Output dynamically in terminal* | Upload documents, grant/update/revoke shares |
+| **Viewer** | `viewer_demo`| *Output dynamically in terminal* | Access shared documents, download, view permissions |
 
 ### Step 7: Run the Development Server
 ```bash
@@ -84,7 +93,7 @@ Visit `http://127.0.0.1:8000/` in your browser.
 ```bash
 python manage.py test
 ```
-*Expected Result:* 274 tests passing (100% pass rate).
+*Expected Result:* 277 tests passing (100% pass rate).
 
 ### Run Test Suite via Pytest
 ```bash

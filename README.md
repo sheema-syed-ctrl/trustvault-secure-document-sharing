@@ -4,7 +4,7 @@
 **Track:** Python / Django Backend & Fullstack Engineering
 **Primary Stack:** Python 3.13.7, Django 5.2.18, SQLite 3 / PostgreSQL 14+, Tailwind CSS, Vanilla JS
 **Security Baseline:** OWASP ASVS Level 2, Zero-Trust Server-Side Authorization, STRIDE Threat Modeling
-**Test Coverage:** 274 Automated Tests (100% Pass Rate) | 0 Static Vulnerabilities (`bandit`, `pip-audit`)
+**Test Coverage:** 277 Automated Tests (100% Pass Rate) | 0 Static Vulnerabilities (`bandit`, `pip-audit`)
 
 ---
 
@@ -42,16 +42,19 @@ TrustVault is an enterprise-grade secure document-sharing platform engineered to
 
 ## 3. Demo Credentials Reference
 
-TrustVault includes a built-in synthetic demo data seeder command:
+TrustVault features a secure synthetic demo data seeder command:
 ```bash
 python manage.py seed_demo_data --clean
 ```
 
-| Role | Username | Password | Purpose & Access Boundary |
+> [!NOTE]
+> In accordance with secure credential management best practices, passwords are **never hardcoded or committed to version control**. When `seed_demo_data` executes, high-entropy random passwords meeting all Django password validation criteria are dynamically generated and displayed exclusively in the terminal to the authorized operator. Alternatively, custom passwords can be specified via environment variables (`DEMO_ADMIN_PASSWORD`, `DEMO_OWNER_PASSWORD`, `DEMO_VIEWER_PASSWORD`).
+
+| Role | Username | Password Provisioning | Purpose & Access Boundary |
 | :--- | :--- | :--- | :--- |
-| **Administrator** | `admin_demo` | `AdminPassword123!` | System metrics, user management, global audit inspection. Document download links suppressed. |
-| **Document Owner**| `owner_demo` | `OwnerPassword123!` | Uploads confidential documents, grants granular shares, updates metadata, revokes access. |
-| **Viewer** | `viewer_demo`| `ViewerPassword123!`| Accesses shared documents (Doc 1: READ, Doc 2: EDIT, Doc 3: Revoked/Access Denied). |
+| **Administrator** | `admin_demo` | *Generated dynamically on seed* | System metrics, user management, global audit inspection. Document download links suppressed. |
+| **Document Owner**| `owner_demo` | *Generated dynamically on seed* | Uploads confidential documents, grants granular shares, updates metadata, revokes access. |
+| **Viewer** | `viewer_demo`| *Generated dynamically on seed* | Accesses shared documents (Doc 1: READ, Doc 2: EDIT, Doc 3: Revoked/Access Denied). |
 
 ---
 
@@ -121,13 +124,13 @@ flowchart TD
 TrustVault maintains a 100% passing automated test suite covering unit, integration, and security regression vectors:
 
 ```text
-Ran 274 tests in ~35s
+Ran 277 tests in ~35s
 OK
 System check identified no issues (0 silenced).
 ```
 
 ### Breakdown by Module:
-- `accounts`: 25 tests (RBAC lifecycle, privilege escalation defenses, admin self-protection, demo data seeder)
+- `accounts`: 28 tests (RBAC lifecycle, privilege escalation defenses, admin self-protection, dynamic demo seeder, production gates)
 - `core`: 42 tests (6 system architecture + 36 dedicated security regression tests)
 - `documents`: 71 tests (Upload validation, magic bytes, storage isolation, streaming, deletion, discovery)
 - `permissions`: 64 tests (Default-deny, grant, update, revoke, cross-document IDOR, CSRF)

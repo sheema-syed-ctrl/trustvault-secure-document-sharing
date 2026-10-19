@@ -1,16 +1,23 @@
 """
 Management command to seed realistic synthetic demo data into TrustVault.
-Creates:
-  - 3 Role-specific users: admin_demo, owner_demo, viewer_demo
-  - 3 Synthetic documents in protected private storage
-  - Granular permissions: READ, EDIT, and Revoked access
-  - Comprehensive persistent audit trail entries
+
+Security Principles:
+  - Generates cryptographically secure, high-entropy passwords dynamically.
+  - Allows operator override via environment variables (DEMO_ADMIN_PASSWORD, etc.).
+  - Prohibits automated demo creation in production environments (DEBUG=False)
+    unless explicitly authorized via ALLOW_DEMO_SEEDING=True.
+  - Enforces strict scoping on --clean to never delete non-demo accounts or files.
+  - Zero password logging or persistence in audit metadata.
 """
 
-from django.core.management.base import BaseCommand
+import os
+import secrets
+import string
+
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
-from django.db import transaction
 
 from accounts.models import User
 from documents.models import Document, DocumentCategory
@@ -21,6 +28,25 @@ from audit.models import AuditEvent, AuditEventType, AuditStatus
 from audit.services import AuditService
 
 
+DEMO_USERNAMES = ('admin_demo', 'owner_demo', 'viewer_demo')
+
+
+def generate_secure_password(length=16):
+    """
+    Generate a cryptographically secure random password meeting all
+    Django AUTH_PASSWORD_VALIDATORS criteria.
+    """
+    specials = "!@#$%^&*()-_=+"
+    alphabet = string.ascii_letters + string.digits + specials
+    while True:
+        password = ''.join(secrets.choice(alphabet) for _ in range(length))
+        if (any(c.isupper() for c in password)
+                and any(c.islower() for c in password)
+                and any(c.isdigit() for c in password)
+                and any(c in specials for c in password)):
+            return password
+
+
 class Command(BaseCommand):
     help = "Seeds TrustVault with demo accounts, protected documents, permissions, and audit logs."
 
@@ -28,57 +54,70 @@ class Command(BaseCommand):
         parser.add_argument(
             '--clean',
             action='store_true',
-            help='Purges existing demo users and associated documents before seeding.',
+            help='Purges existing synthetic demo users and their documents before seeding.',
         )
 
     def handle(self, *args, **options):
+        # 0. Production Safety Gate
+        if not settings.DEBUG and os.getenv('ALLOW_DEMO_SEEDING', '').strip().lower() not in ('true', '1', 'yes'):
+            raise CommandError(
+                "Demo data seeding is prohibited in production (DEBUG=False). "
+                "Set ALLOW_DEMO_SEEDING=True if you explicitly intend to seed synthetic data in this environment."
+            )
+
         self.stdout.write(self.style.NOTICE("Initializing TrustVault Demo Data Seeder..."))
 
         User = get_user_model()
         clean = options.get('clean', False)
 
-        demo_usernames = ['admin_demo', 'owner_demo', 'viewer_demo']
-
         if clean:
-            self.stdout.write("Purging prior demo users and data...")
-            docs = Document.objects.filter(owner__username__in=demo_usernames)
-            for d in docs:
+            self.stdout.write("Purging prior synthetic demo users and documents...")
+            # Safety Constraint: Strictly bound to demo usernames
+            demo_docs = Document.objects.filter(owner__username__in=DEMO_USERNAMES)
+            for d in demo_docs:
                 try:
                     DocumentService.delete_document(actor=d.owner, document_id=d.pk)
                 except Exception:
                     d.delete()
-            User.objects.filter(username__in=demo_usernames).delete()
-            self.stdout.write(self.style.SUCCESS("Prior demo data purged successfully."))
+            User.objects.filter(username__in=DEMO_USERNAMES).delete()
+            self.stdout.write(self.style.SUCCESS("Prior synthetic demo data purged successfully."))
 
-        # 1. Create or retrieve demo accounts
-        users = {}
+        # 1. Resolve Secure Passwords (Environment Variable Override or Cryptographic Random)
+        admin_password = os.getenv('DEMO_ADMIN_PASSWORD') or generate_secure_password()
+        owner_password = os.getenv('DEMO_OWNER_PASSWORD') or generate_secure_password()
+        viewer_password = os.getenv('DEMO_VIEWER_PASSWORD') or generate_secure_password()
+
         account_specs = [
             {
                 'username': 'admin_demo',
                 'email': 'admin@trustvault.local',
                 'role': User.Role.ADMIN,
-                'password': 'AdminPassword123!',
+                'password': admin_password,
                 'is_staff': True,
                 'is_superuser': True,
+                'description': 'Administrator (Full platform & audit governance)',
             },
             {
                 'username': 'owner_demo',
                 'email': 'owner@trustvault.local',
                 'role': User.Role.OWNER,
-                'password': 'OwnerPassword123!',
+                'password': owner_password,
                 'is_staff': False,
                 'is_superuser': False,
+                'description': 'Document Owner (Upload, grant, edit, revoke)',
             },
             {
                 'username': 'viewer_demo',
                 'email': 'viewer@trustvault.local',
                 'role': User.Role.VIEWER,
-                'password': 'ViewerPassword123!',
+                'password': viewer_password,
                 'is_staff': False,
                 'is_superuser': False,
+                'description': 'Viewer (Inspect shared docs, download, edit)',
             },
         ]
 
+        users = {}
         for spec in account_specs:
             user, created = User.objects.get_or_create(
                 username=spec['username'],
@@ -219,20 +258,16 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(f"  [Permission] Revoked access on '{doc.name}' from {viewer.username} (Access Denied logged)")
 
+        # 4. Display Credentials Exclusively to Authorized Console Operator
         self.stdout.write(self.style.SUCCESS("\nTrustVault Demo Data successfully provisioned!"))
-        self.stdout.write("\n" + "=" * 70)
-        self.stdout.write("DEMO ACCOUNTS REFERENCE:")
-        self.stdout.write("=" * 70)
-        self.stdout.write("  1. Administrator:")
-        self.stdout.write("     Username: admin_demo")
-        self.stdout.write("     Password: AdminPassword123!")
-        self.stdout.write("     Role:     Administrator (Full platform & audit governance)")
-        self.stdout.write("  2. Document Owner:")
-        self.stdout.write("     Username: owner_demo")
-        self.stdout.write("     Password: OwnerPassword123!")
-        self.stdout.write("     Role:     Document Owner (Upload, grant, edit, revoke)")
-        self.stdout.write("  3. Viewer:")
-        self.stdout.write("     Username: viewer_demo")
-        self.stdout.write("     Password: ViewerPassword123!")
-        self.stdout.write("     Role:     Viewer (Inspect shared docs, download, edit)")
-        self.stdout.write("=" * 70 + "\n")
+        self.stdout.write("\n" + "=" * 74)
+        self.stdout.write(self.style.WARNING("ATTENTION: DEMO CREDENTIALS GENERATED DYNAMICALLY"))
+        self.stdout.write("These credentials are provisioned for local development and evaluation.")
+        self.stdout.write("Passwords are never committed to version control or saved in audit logs.")
+        self.stdout.write("=" * 74)
+        for idx, spec in enumerate(account_specs, start=1):
+            self.stdout.write(f"  {idx}. {spec['description']}:")
+            self.stdout.write(f"     Username: {spec['username']}")
+            self.stdout.write(f"     Password: {spec['password']}")
+            self.stdout.write(f"     Role:     {spec['role']}")
+        self.stdout.write("=" * 74 + "\n")

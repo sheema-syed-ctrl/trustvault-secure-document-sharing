@@ -56,14 +56,14 @@
 
 ## 4. Testing & Code Quality (15% Weight) — 100% VERIFIED
 
-- [x] **Automated Test Suite:** **274 passing tests** across all 6 applications:
-  - `accounts`: 25 passing tests
+- [x] **Automated Test Suite:** **277 passing tests** across all 6 applications:
+  - `accounts`: 28 passing tests
   - `core`: 42 passing tests (6 system architecture + 36 dedicated security tests)
   - `documents`: 71 passing tests
   - `permissions`: 64 passing tests
   - `audit`: 32 passing tests
   - `dashboard`: 36 passing tests
-  - Total: **274 tests (100% Pass Rate)**
+  - Total: **277 tests (100% Pass Rate)**
 - [x] **Pytest Compatibility:** `pytest` runs cleanly with 100% pass rate.
 - [x] **Django Framework Checks:** `python manage.py check` reports 0 issues.
 - [x] **Database Migration Health:** `python manage.py makemigrations --check` reports 0 pending migrations.
