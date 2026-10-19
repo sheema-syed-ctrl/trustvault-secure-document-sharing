@@ -5,6 +5,7 @@ Enforces centralized server-side object authorization via PermissionService.
 """
 
 import logging
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, Http404
 from django.contrib.auth.decorators import login_required
@@ -198,8 +199,12 @@ def document_download_view(request, doc_id):
     if not safe_filename:
         safe_filename = f"document_{document.id}.bin"
 
-    # Determine trusted content type
-    content_type = document.mime_type or 'application/octet-stream'
+    # Determine trusted content type (fallback to binary stream if unrecognized or missing)
+    permitted_types = getattr(settings, 'PERMITTED_FILE_TYPES', {})
+    if document.mime_type and document.mime_type in permitted_types:
+        content_type = document.mime_type
+    else:
+        content_type = 'application/octet-stream'
 
     # Stream the file using FileResponse (chunk-based, auto-closes file handle)
     response = FileResponse(

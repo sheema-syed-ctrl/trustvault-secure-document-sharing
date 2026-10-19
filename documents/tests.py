@@ -735,6 +735,51 @@ class DocumentDownloadAndDeliveryTests(TestCase):
         res_put = self.client.put(url)
         self.assertEqual(res_put.status_code, 405)
 
+    def test_head_request_preserves_headers_and_suppresses_body(self):
+        """19b. HEAD request returns 200, all security headers intact, empty body, and file handle closed."""
+        self.client.login(username='download_alice', password=self.password)
+        url = reverse('documents:download', args=[self.alice_doc.id])
+        res_head = self.client.head(url)
+
+        self.assertEqual(res_head.status_code, 200)
+        self.assertEqual(res_head['Content-Type'], 'application/pdf')
+        self.assertIn('attachment;', res_head['Content-Disposition'])
+        self.assertIn('alice_vault.pdf', res_head['Content-Disposition'])
+        self.assertEqual(res_head['X-Content-Type-Options'], 'nosniff')
+        self.assertIn('no-store', res_head['Cache-Control'])
+        self.assertEqual(res_head['Pragma'], 'no-cache')
+        # Body must be strictly empty (0 bytes streamed)
+        self.assertEqual(b''.join(res_head.streaming_content), b'')
+        # File handle closure verification (FileResponse closed by client handler)
+        self.assertTrue(res_head.closed)
+
+    def test_unrecognized_or_missing_mime_type_falls_back_to_octet_stream(self):
+        """19c. Unrecognized or missing MIME type safely defaults to application/octet-stream."""
+        # Update alice_doc mime_type to unrecognized string
+        Document.objects.filter(pk=self.alice_doc.pk).update(mime_type='application/x-unrecognized-binary')
+        self.client.login(username='download_alice', password=self.password)
+        res = self.client.get(reverse('documents:download', args=[self.alice_doc.id]))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'application/octet-stream')
+
+        # Empty mime_type also falls back to octet-stream
+        Document.objects.filter(pk=self.alice_doc.pk).update(mime_type='')
+        res_empty = self.client.get(reverse('documents:download', args=[self.alice_doc.id]))
+        self.assertEqual(res_empty.status_code, 200)
+        self.assertEqual(res_empty['Content-Type'], 'application/octet-stream')
+
+    def test_malformed_or_non_integer_doc_id_returns_404(self):
+        """19d. Non-integer or UUID formatted doc_id rejected at router level with 404."""
+        self.client.login(username='download_alice', password=self.password)
+        # Attempt non-integer / string ID
+        res_string = self.client.get('/documents/invalid-id/download/')
+        self.assertEqual(res_string.status_code, 404)
+
+        # Attempt UUID formatted ID on integer route
+        uuid_str = str(self.alice_doc.uuid)
+        res_uuid = self.client.get(f'/documents/{uuid_str}/download/')
+        self.assertEqual(res_uuid.status_code, 404)
+
     # -------------------------------------------------------------------------
     # 4. UI Actions & Service Layer Grantor Validation
     # -------------------------------------------------------------------------
