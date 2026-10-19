@@ -3,19 +3,25 @@
 {% block title %}Administrator Dashboard — TrustVault{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div>
         <h2 class="fw-bold mb-1">
             <i class="bi bi-shield-shaded text-danger me-2"></i> Administrator Control Panel
         </h2>
-        <p class="text-muted small mb-0">System Governance, User Directory &amp; Audit Oversight</p>
+        <p class="text-muted small mb-0">System Governance, Platform Health, User Directory &amp; Security Oversight</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2">
         <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-primary btn-sm">
             <i class="bi bi-people-fill me-1"></i> User Directory
         </a>
         <a href="{% url 'accounts:user_create' %}" class="btn btn-primary btn-sm">
             <i class="bi bi-person-plus-fill me-1"></i> Add User
+        </a>
+        <a href="{% url 'audit:trail' %}" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-journal-text me-1"></i> Full Audit Trail
+        </a>
+        <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-folder2-open me-1"></i> Document Index
         </a>
     </div>
 </div>
@@ -23,19 +29,25 @@
 <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4">
     <i class="bi bi-shield-lock-fill fs-4 me-3 text-primary"></i>
     <div class="small">
-        <strong>Trust Boundary Notice:</strong> As a Platform Administrator, you govern accounts, monitor audit records, and review security events.
-        Under the principle of least privilege, administrators do not receive arbitrary access to private document contents.
+        <strong>Trust Boundary Notice:</strong> As a Platform Administrator, you govern accounts, monitor system health, and inspect audit trails.
+        Under the principle of least privilege, administrative status does not grant document content viewing or file download access.
     </div>
 </div>
 
-<!-- Metrics Cards -->
+<!-- Primary Platform Health Metrics -->
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 p-3">
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <div class="text-muted small text-uppercase fw-semibold">Total Users</div>
                     <div class="fs-3 fw-bold text-dark">{{ total_users }}</div>
+                    <div class="small text-muted mt-1">
+                        <span class="badge bg-success-subtle text-success">{{ active_users }} Active</span>
+                        {% if inactive_users %}
+                            <span class="badge bg-secondary-subtle text-secondary">{{ inactive_users }} Inactive</span>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="bg-primary-subtle text-primary rounded-circle p-3">
                     <i class="bi bi-people-fill fs-4"></i>
@@ -43,51 +55,191 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 p-3">
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Administrators</div>
-                    <div class="fs-3 fw-bold text-danger">{{ admin_count }}</div>
+                    <div class="text-muted small text-uppercase fw-semibold">Registered Documents</div>
+                    <div class="fs-3 fw-bold text-dark">{{ total_documents }}</div>
+                    <div class="small text-muted mt-1">Platform-wide vaults</div>
                 </div>
-                <div class="bg-danger-subtle text-danger rounded-circle p-3">
-                    <i class="bi bi-shield-fill-check fs-4"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 p-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Document Owners</div>
-                    <div class="fs-3 fw-bold text-primary">{{ owner_count }}</div>
-                </div>
-                <div class="bg-primary-subtle text-primary rounded-circle p-3">
+                <div class="bg-secondary-subtle text-secondary rounded-circle p-3">
                     <i class="bi bi-file-earmark-lock2-fill fs-4"></i>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 p-3">
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Viewers</div>
-                    <div class="fs-3 fw-bold text-info">{{ viewer_count }}</div>
+                    <div class="text-muted small text-uppercase fw-semibold">Active Permissions</div>
+                    <div class="fs-3 fw-bold text-info">{{ total_permissions }}</div>
+                    <div class="small text-muted mt-1">Cross-user sharing grants</div>
                 </div>
                 <div class="bg-info-subtle text-info rounded-circle p-3">
-                    <i class="bi bi-eye-fill fs-4"></i>
+                    <i class="bi bi-key-fill fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Security Denials</div>
+                    <div class="fs-3 fw-bold {% if security_denial_count > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ security_denial_count }}
+                    </div>
+                    <div class="small text-muted mt-1">Unauthorized attempts</div>
+                </div>
+                <div class="{% if security_denial_count > 0 %}bg-danger-subtle text-danger{% else %}bg-success-subtle text-success{% endif %} rounded-circle p-3">
+                    <i class="bi bi-shield-exclamation fs-4"></i>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Secondary Role Distribution Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-3 p-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Administrators</div>
+                    <div class="fs-4 fw-bold text-danger">{{ admin_count }}</div>
+                </div>
+                <i class="bi bi-shield-fill-check fs-2 text-danger opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-3 p-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Document Owners</div>
+                    <div class="fs-4 fw-bold text-primary">{{ owner_count }}</div>
+                </div>
+                <i class="bi bi-person-badge fs-2 text-primary opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-3 p-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Viewers</div>
+                    <div class="fs-4 fw-bold text-info">{{ viewer_count }}</div>
+                </div>
+                <i class="bi bi-eye fs-2 text-info opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if recent_security_denials %}
+    <!-- Security Denial Alert Banner -->
+    <div class="card border-danger shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-danger text-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Recent Security Access Denials
+            </h5>
+            <a href="{% url 'audit:trail' %}?event_type=SECURITY_ACCESS_DENIED" class="btn btn-sm btn-light">View All Denials &rarr;</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Timestamp</th>
+                        <th>Actor</th>
+                        <th>Attempted Document</th>
+                        <th>Client IP</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in recent_security_denials %}
+                        <tr>
+                            <td class="ps-4 small text-muted">{{ event.timestamp|date:"M d, Y H:i:s" }}</td>
+                            <td class="fw-semibold text-danger">{{ event.actor_username }}</td>
+                            <td>{{ event.target_document_name_snapshot|default:"—" }}</td>
+                            <td class="small font-monospace">{{ event.ip_address|default:"—" }}</td>
+                            <td class="small text-muted">{{ event.metadata.reason|default:"Access Denied" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Platform Recent Activity Feed -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">
+            <i class="bi bi-activity me-2 text-primary"></i> Recent Platform Activity Feed
+        </h5>
+        <a href="{% url 'audit:trail' %}" class="small text-decoration-none">View Complete Audit Trail &rarr;</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4">Timestamp</th>
+                    <th>Event Type</th>
+                    <th>Actor</th>
+                    <th>Target Document / Subject</th>
+                    <th>Client IP</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in recent_activity %}
+                    <tr>
+                        <td class="ps-4 small text-muted">{{ event.timestamp|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <span class="badge {% if 'DENIED' in event.event_type %}bg-danger{% elif 'UPLOAD' in event.event_type %}bg-primary{% elif 'DOWNLOAD' in event.event_type %}bg-success{% elif 'GRANT' in event.event_type %}bg-info text-dark{% elif 'REVOKE' in event.event_type %}bg-warning text-dark{% elif 'DELETE' in event.event_type %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ event.get_event_type_display }}
+                            </span>
+                        </td>
+                        <td class="fw-semibold">{{ event.actor_username }}</td>
+                        <td>
+                            {% if event.target_document_name_snapshot %}
+                                <span class="text-truncate d-inline-block" style="max-width: 250px;">
+                                    {{ event.target_document_name_snapshot }}
+                                </span>
+                            {% elif event.target_username %}
+                                <span class="text-muted">User: {{ event.target_username }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="small font-monospace text-muted">{{ event.ip_address|default:"—" }}</td>
+                        <td>
+                            {% if event.status == 'SUCCESS' %}
+                                <span class="badge bg-success-subtle text-success">Success</span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger">Denied</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No audit activity recorded yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <!-- Recent Users Table -->
 <div class="card border-0 shadow-sm rounded-3">
     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i> Recently Registered Users</h5>
+        <h5 class="fw-bold mb-0">
+            <i class="bi bi-clock-history me-2 text-primary"></i> Recently Registered Users
+        </h5>
         <a href="{% url 'accounts:user_list' %}" class="small text-decoration-none">View All Users &rarr;</a>
     </div>
     <div class="table-responsive">
