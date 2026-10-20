@@ -1,49 +1,61 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ document.name }} — Document Details — TrustVault{% endblock %}
+{% block title %}{{ document.name }} — Document Overview — TrustVault{% endblock %}
+
+{% block breadcrumbs %}
+<li><a href="{% url 'documents:list' %}">Documents</a></li>
+<li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
+<li class="tv-breadcrumb-current">{{ document.name|truncatechars:25 }}</li>
+{% endblock %}
 
 {% block content %}
+<!-- Detail Header -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div class="d-flex align-items-center">
-        <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary btn-sm me-3">
+        <a href="{% url 'documents:list' %}" class="tv-btn tv-btn-secondary tv-btn-sm me-3" title="Back to Document Index">
             <i class="bi bi-arrow-left"></i>
         </a>
         <div>
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <h2 class="fw-bold mb-0">{{ document.name }}</h2>
-                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
-                    {{ document.get_category_display }}
-                </span>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <h2 class="fw-bold mb-0" style="color: var(--tv-text-main);">{{ document.name }}</h2>
+                <span class="tv-pill tv-pill-primary">{{ document.get_category_display }}</span>
                 {% if effective_permission == 'OWNER' %}
-                    <span class="badge bg-primary"><i class="bi bi-person-fill-lock me-1"></i>Owner</span>
+                    <span class="tv-pill tv-pill-primary"><i class="bi bi-person-fill-lock"></i> Owner</span>
                 {% elif effective_permission == 'EDIT' %}
-                    <span class="badge bg-warning text-dark"><i class="bi bi-pencil-fill me-1"></i>Edit Access</span>
+                    <span class="tv-pill tv-pill-warning"><i class="bi bi-pencil-fill"></i> Edit Access</span>
                 {% elif effective_permission == 'READ' %}
-                    <span class="badge bg-info text-dark"><i class="bi bi-eye-fill me-1"></i>Read Only</span>
+                    <span class="tv-pill tv-pill-info"><i class="bi bi-eye-fill"></i> Read Only</span>
                 {% endif %}
             </div>
-            <p class="text-muted small mb-0">Owned by <strong>{{ document.owner.username }}</strong> &bull; Uploaded on {{ document.created_at|date:"M d, Y H:i" }}</p>
+            <p class="small mb-0" style="color: var(--tv-text-secondary);">
+                Owned by <strong>{{ document.owner.username }}</strong> &bull; Uploaded on {{ document.created_at|date:"M d, Y H:i" }}
+            </p>
         </div>
     </div>
-    <div class="d-flex gap-2">
+
+    <!-- Action Toolbar -->
+    <div class="d-flex flex-wrap gap-2">
         {% if can_download %}
-            <a href="{% url 'documents:download' document.id %}" class="btn btn-primary btn-sm">
-                <i class="bi bi-download me-1"></i> Download Document
+            <a href="{% url 'documents:download' document.id %}" class="tv-btn tv-btn-primary tv-btn-sm shadow-sm" title="Secure download via streaming view">
+                <i class="bi bi-download"></i> Download File
             </a>
         {% endif %}
         {% if can_manage_permissions %}
-            <a href="{% url 'permissions:manage' document.id %}" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-share me-1"></i> Share &amp; Permissions
+            <a href="{% url 'permissions:manage' document.id %}" class="tv-btn tv-btn-secondary tv-btn-sm" title="Manage Collaborator Permissions">
+                <i class="bi bi-share"></i> Share Access
             </a>
         {% endif %}
         {% if can_edit %}
-            <a href="{% url 'documents:edit' document.id %}" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-pencil me-1"></i> Edit Metadata
+            <a href="{% url 'documents:edit' document.id %}" class="tv-btn tv-btn-secondary tv-btn-sm" title="Edit Metadata">
+                <i class="bi bi-pencil"></i> Edit
             </a>
         {% endif %}
+        <a href="{% url 'audit:document_activity' document.id %}" class="tv-btn tv-btn-secondary tv-btn-sm" title="Inspect Document Audit Log">
+            <i class="bi bi-clock-history"></i> Activity
+        </a>
         {% if can_delete %}
-            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteDocModal">
-                <i class="bi bi-trash me-1"></i> Delete
+            <button type="button" class="tv-btn tv-btn-outline-danger tv-btn-sm" data-bs-toggle="modal" data-bs-target="#deleteDocModal" title="Delete Document">
+                <i class="bi bi-trash"></i> Delete
             </button>
         {% endif %}
     </div>
@@ -52,43 +64,47 @@
 <div class="row g-4">
     <div class="col-lg-8">
         <!-- Description Card -->
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-header bg-white border-bottom py-3">
-                <h6 class="fw-bold mb-0 text-uppercase small text-secondary">Document Description</h6>
+        <div class="tv-card mb-4">
+            <div class="tv-card-header">
+                <h6 class="fw-bold mb-0 small text-uppercase" style="color: var(--tv-text-muted);">Document Scope &amp; Summary</h6>
             </div>
-            <div class="card-body p-4">
+            <div class="tv-card-body">
                 {% if document.description %}
-                    <p class="mb-0 text-body" style="white-space: pre-line;">{{ document.description }}</p>
+                    <p class="mb-0 text-break" style="white-space: pre-line; color: var(--tv-text-main);">{{ document.description }}</p>
                 {% else %}
-                    <span class="text-muted fst-italic">No description provided for this document.</span>
+                    <span class="text-muted fst-italic small">No detailed description has been registered for this document.</span>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Verification & Integrity Details -->
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-header bg-white border-bottom py-3">
-                <h6 class="fw-bold mb-0 text-uppercase small text-secondary">Cryptographic &amp; Storage Integrity</h6>
+        <!-- Cryptographic Integrity Card -->
+        <div class="tv-card">
+            <div class="tv-card-header">
+                <h6 class="fw-bold mb-0 small text-uppercase" style="color: var(--tv-text-muted);">Cryptographic &amp; Storage Integrity</h6>
             </div>
-            <div class="card-body p-4">
+            <div class="tv-card-body">
                 <div class="mb-3">
-                    <label class="text-muted small text-uppercase fw-semibold d-block">SHA-256 Checksum</label>
-                    <div class="p-2 bg-light rounded font-monospace small text-break border">
-                        <i class="bi bi-fingerprint text-primary me-2"></i>{{ document.sha256_hash }}
+                    <label class="tv-label">SHA-256 Digest</label>
+                    <div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 border" style="background-color: var(--tv-bg-subtle); border-color: var(--tv-border-default) !important;">
+                        <span class="font-monospace small text-break" style="color: var(--tv-text-main);">{{ document.sha256_hash }}</span>
+                        <button type="button" class="tv-btn tv-btn-ghost tv-btn-sm" data-copy-target="{{ document.sha256_hash }}" title="Copy SHA-256">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
                     </div>
                 </div>
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="text-muted small text-uppercase fw-semibold d-block">Internal Vault Identifier</label>
-                        <div class="p-2 bg-light rounded font-monospace small border">
+                        <label class="tv-label">Vault Storage UUID</label>
+                        <div class="p-2.5 rounded-3 border font-monospace small" style="background-color: var(--tv-bg-subtle); border-color: var(--tv-border-default) !important; color: var(--tv-text-main);">
                             {{ document.uuid }}
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="text-muted small text-uppercase fw-semibold d-block">Storage Shield</label>
-                        <div class="p-2 bg-success-subtle text-success rounded small border border-success-subtle">
-                            <i class="bi bi-shield-lock-fill me-1"></i> Isolated in Private Protected Media
+                        <label class="tv-label">Storage Protection Shield</label>
+                        <div class="p-2.5 rounded-3 border d-flex align-items-center gap-2 small tv-pill-success" style="background-color: var(--tv-success-bg);">
+                            <i class="bi bi-shield-lock-fill"></i>
+                            <span class="fw-semibold">Protected Media Root Isolated</span>
                         </div>
                     </div>
                 </div>
@@ -98,82 +114,71 @@
 
     <!-- Metadata Sidebar -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-header bg-white border-bottom py-3">
-                <h6 class="fw-bold mb-0 text-uppercase small text-secondary">File Attributes</h6>
+        <div class="tv-card">
+            <div class="tv-card-header">
+                <h6 class="fw-bold mb-0 small text-uppercase" style="color: var(--tv-text-muted);">Technical Specifications</h6>
             </div>
-            <div class="card-body p-4">
-                <ul class="list-group list-group-flush small">
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Original Filename</span>
-                        <span class="fw-semibold text-truncate ms-2" style="max-width: 180px;">{{ document.original_filename }}</span>
+            <div class="tv-card-body p-0">
+                <ul class="list-group list-group-flush small" style="background-color: var(--tv-bg-surface);">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" style="background-color: transparent; border-color: var(--tv-border-subtle) !important;">
+                        <span style="color: var(--tv-text-muted);">Original Name:</span>
+                        <span class="fw-semibold text-truncate ms-2" style="max-width: 180px; color: var(--tv-text-main);">{{ document.original_filename }}</span>
                     </li>
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Verified MIME</span>
-                        <span class="font-monospace text-dark">{{ document.mime_type }}</span>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" style="background-color: transparent; border-color: var(--tv-border-subtle) !important;">
+                        <span style="color: var(--tv-text-muted);">File Size:</span>
+                        <span class="tv-code-pill">{{ document.file_size|filesizeformat }}</span>
                     </li>
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span class="text-muted">File Size</span>
-                        <span class="fw-semibold">{{ document.formatted_size }} ({{ document.file_size }} bytes)</span>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" style="background-color: transparent; border-color: var(--tv-border-subtle) !important;">
+                        <span style="color: var(--tv-text-muted);">Verified MIME Type:</span>
+                        <span class="tv-code-pill">{{ document.mime_type }}</span>
                     </li>
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Category</span>
-                        <span>{{ document.get_category_display }}</span>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" style="background-color: transparent; border-color: var(--tv-border-subtle) !important;">
+                        <span style="color: var(--tv-text-muted);">Created Timestamp:</span>
+                        <span style="color: var(--tv-text-main);">{{ document.created_at|date:"Y-m-d H:i" }}</span>
                     </li>
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Created</span>
-                        <span>{{ document.created_at|date:"M d, Y H:i" }}</span>
-                    </li>
-                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Last Updated</span>
-                        <span>{{ document.updated_at|date:"M d, Y H:i" }}</span>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" style="background-color: transparent; border-color: var(--tv-border-subtle) !important;">
+                        <span style="color: var(--tv-text-muted);">Last Modified:</span>
+                        <span style="color: var(--tv-text-main);">{{ document.updated_at|date:"Y-m-d H:i" }}</span>
                     </li>
                 </ul>
             </div>
         </div>
-
-        {% if is_owner %}
-            <div class="card border-0 shadow-sm rounded-4 mt-4">
-                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold mb-0 text-uppercase small text-secondary">Access Control</h6>
-                    <a href="{% url 'permissions:manage' document.id %}" class="btn btn-sm btn-link text-decoration-none p-0">Manage</a>
-                </div>
-                <div class="card-body p-3">
-                    <p class="text-muted small mb-2">Configure which registered users can view or edit this document.</p>
-                    <a href="{% url 'permissions:manage' document.id %}" class="btn btn-outline-primary btn-sm w-100">
-                        <i class="bi bi-shield-lock me-1"></i> Manage Sharing ({{ document.permissions.count }})
-                    </a>
-                    <a href="{% url 'audit:document_activity' document.id %}" class="btn btn-outline-secondary btn-sm w-100 mt-2">
-                        <i class="bi bi-clock-history me-1"></i> View Activity History
-                    </a>
-                </div>
-            </div>
-        {% endif %}
     </div>
 </div>
 
+<!-- Deletion Confirmation Modal -->
 {% if can_delete %}
-    <!-- Delete Modal -->
-    <div class="modal fade" id="deleteDocModal" tabindex="-1" aria-labelledby="deleteDocModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="deleteDocModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Document</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="deleteDocModal" tabindex="-1" aria-labelledby="deleteDocModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content tv-card border shadow-lg" style="background-color: var(--tv-bg-surface);">
+            <div class="modal-header border-bottom" style="border-color: var(--tv-border-default) !important;">
+                <h5 class="modal-title fw-bold text-danger" id="deleteDocModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Confirm Document Deletion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="mb-2" style="color: var(--tv-text-main);">
+                    Are you sure you want to permanently delete <strong>"{{ document.name }}"</strong>?
+                </p>
+                <div class="tv-alert tv-alert-danger mb-0 small">
+                    <i class="bi bi-shield-x fs-5 text-danger flex-shrink-0"></i>
+                    <div>
+                        <strong>Irreversible Action:</strong> The binary file will be purged from protected storage, all active permissions will be revoked, and an immutable <code>DOCUMENT_DELETED</code> audit event will be logged.
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to permanently delete <strong>{{ document.name }}</strong>?</p>
-                    <p class="text-muted small mb-0">The document metadata and underlying protected storage file will be immediately destroyed.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <form method="post" action="{% url 'documents:delete' document.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-sm">Confirm Deletion</button>
-                    </form>
-                </div>
+            </div>
+            <div class="modal-footer border-top" style="border-color: var(--tv-border-default) !important;">
+                <button type="button" class="tv-btn tv-btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'documents:delete' document.id %}" method="post" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="tv-btn tv-btn-danger">
+                        <i class="bi bi-trash3-fill"></i> Permanently Delete
+                    </button>
+                </form>
             </div>
         </div>
     </div>
+</div>
 {% endif %}
 {% endblock %}

@@ -1,21 +1,26 @@
 {% extends 'base.html' %}
 
-{% block title %}Document Owner Dashboard — TrustVault{% endblock %}
+{% block title %}Owner Workspace — TrustVault{% endblock %}
+
+{% block breadcrumbs %}
+<li class="tv-breadcrumb-current">Owner Workspace</li>
+{% endblock %}
 
 {% block content %}
+<!-- Page Header -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div>
-        <h2 class="fw-bold mb-1">
+        <h2 class="fw-bold mb-1" style="color: var(--tv-text-main);">
             <i class="bi bi-folder-fill text-primary me-2"></i> Document Owner Dashboard
         </h2>
-        <p class="text-muted small mb-0">Manage confidential documents, assign permissions, and audit access</p>
+        <p class="small mb-0" style="color: var(--tv-text-secondary);">Manage confidential files, assign granular permissions, and inspect access logs</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        <a href="{% url 'documents:upload' %}" class="btn btn-primary btn-sm shadow-sm">
-            <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload Document
+        <a href="{% url 'documents:upload' %}" class="tv-btn tv-btn-primary tv-btn-sm shadow-sm">
+            <i class="bi bi-cloud-arrow-up-fill"></i> Upload Document
         </a>
-        <a href="{% url 'documents:list' %}" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-files me-1"></i> My Documents
+        <a href="{% url 'documents:list' %}" class="tv-btn tv-btn-secondary tv-btn-sm">
+            <i class="bi bi-files"></i> My Documents
         </a>
     </div>
 </div>
@@ -23,68 +28,64 @@
 <!-- Primary Metric Cards -->
 <div class="row g-3 mb-4">
     <div class="col-lg-4 col-md-6">
-        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small text-uppercase fw-semibold">My Documents</div>
-                    <div class="fs-3 fw-bold text-dark">{{ total_documents }}</div>
-                    <div class="small text-muted mt-1">Stored in private vault</div>
-                </div>
-                <div class="bg-primary-subtle text-primary rounded-circle p-3">
-                    <i class="bi bi-file-earmark-text-fill fs-4"></i>
+        <div class="tv-stat-card">
+            <div class="tv-stat-header">
+                <span class="tv-stat-label">My Documents</span>
+                <div class="tv-stat-icon" style="background-color: var(--tv-primary-light); color: var(--tv-primary);">
+                    <i class="bi bi-file-earmark-text-fill"></i>
                 </div>
             </div>
+            <div class="tv-stat-value">{{ total_documents }}</div>
+            <div class="tv-stat-subtext">Confidential documents under ownership</div>
         </div>
     </div>
+
     <div class="col-lg-4 col-md-6">
-        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Shared Documents</div>
-                    <div class="fs-3 fw-bold text-success">{{ shared_count }}</div>
-                    <div class="small text-muted mt-1">With active collaborator grants</div>
-                </div>
-                <div class="bg-success-subtle text-success rounded-circle p-3">
-                    <i class="bi bi-share-fill fs-4"></i>
+        <div class="tv-stat-card">
+            <div class="tv-stat-header">
+                <span class="tv-stat-label">Shared Documents</span>
+                <div class="tv-stat-icon" style="background-color: var(--tv-success-bg); color: var(--tv-success);">
+                    <i class="bi bi-share-fill"></i>
                 </div>
             </div>
+            <div class="tv-stat-value" style="color: var(--tv-success);">{{ shared_count }}</div>
+            <div class="tv-stat-subtext">Active multi-party collaborator grants</div>
         </div>
     </div>
+
     <div class="col-lg-4 col-md-12">
-        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Active Permissions</div>
-                    <div class="fs-3 fw-bold text-info">{{ active_permissions }}</div>
-                    <div class="small text-muted mt-1">
-                        <span class="badge bg-info-subtle text-info">{{ read_permissions_count }} READ</span>
-                        <span class="badge bg-warning-subtle text-warning">{{ edit_permissions_count }} EDIT</span>
-                    </div>
+        <div class="tv-stat-card">
+            <div class="tv-stat-header">
+                <span class="tv-stat-label">Active Permissions</span>
+                <div class="tv-stat-icon" style="background-color: var(--tv-info-bg); color: var(--tv-info);">
+                    <i class="bi bi-key-fill"></i>
                 </div>
-                <div class="bg-info-subtle text-info rounded-circle p-3">
-                    <i class="bi bi-key-fill fs-4"></i>
-                </div>
+            </div>
+            <div class="tv-stat-value" style="color: var(--tv-info);">{{ active_permissions }}</div>
+            <div class="tv-stat-subtext d-flex align-items-center gap-1.5">
+                <span class="tv-pill tv-pill-info py-0 px-2" style="font-size: 11px;">{{ read_permissions_count }} READ</span>
+                <span class="tv-pill tv-pill-warning py-0 px-2" style="font-size: 11px;">{{ edit_permissions_count }} EDIT</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Category Distribution Breakdown -->
-<div class="card border-0 shadow-sm rounded-3 mb-4">
-    <div class="card-header bg-white border-bottom py-3">
-        <h5 class="fw-bold mb-0">
-            <i class="bi bi-tags-fill me-2 text-primary"></i> Documents by Category
-        </h5>
+<!-- Classification Categories -->
+<div class="tv-card mb-4">
+    <div class="tv-card-header">
+        <h6 class="fw-bold mb-0" style="color: var(--tv-text-main);">
+            <i class="bi bi-tags-fill text-primary me-2"></i> Vault Classification Breakdown
+        </h6>
     </div>
-    <div class="card-body p-3">
+    <div class="tv-card-body p-3">
         <div class="row g-2">
             {% for cat in category_metrics %}
                 <div class="col-6 col-md-4 col-lg">
                     <a href="{% url 'documents:list' %}?category={{ cat.code }}" class="text-decoration-none">
-                        <div class="p-3 rounded-3 border bg-light text-center h-100">
-                            <div class="fw-semibold text-dark small text-truncate mb-1">{{ cat.label }}</div>
+                        <div class="p-3 rounded-3 text-center h-100 border tv-card-hover" style="background-color: var(--tv-bg-subtle); border-color: var(--tv-border-default) !important;">
+                            <div class="fw-semibold text-truncate small mb-1" style="color: var(--tv-text-main);">{{ cat.label }}</div>
                             <div class="fs-4 fw-bold text-primary">{{ cat.count }}</div>
-                            <span class="text-muted small">documents</span>
+                            <span class="small" style="color: var(--tv-text-muted);">document{{ cat.count|pluralize }}</span>
                         </div>
                     </a>
                 </div>
@@ -93,82 +94,71 @@
     </div>
 </div>
 
-<!-- Recent Documents Table -->
-<div class="card border-0 shadow-sm rounded-3 mb-4">
-    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0">
-            <i class="bi bi-files me-2 text-primary"></i> My Uploaded Documents
-        </h5>
-        <a href="{% url 'documents:list' %}" class="small text-decoration-none">View All Documents &rarr;</a>
+<!-- My Recent Documents Table -->
+<div class="tv-card mb-4">
+    <div class="tv-card-header d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0" style="color: var(--tv-text-main);">
+            <i class="bi bi-files text-primary me-2"></i> My Uploaded Documents
+        </h6>
+        <a href="{% url 'documents:list' %}" class="small fw-semibold">View All My Documents &rarr;</a>
     </div>
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="tv-table">
+            <thead>
                 <tr>
-                    <th class="ps-4">Document Name</th>
+                    <th>Document Name</th>
                     <th>Category</th>
                     <th>Size</th>
-                    <th>Sharing Status</th>
+                    <th>Active Shares</th>
                     <th>Uploaded</th>
-                    <th class="text-end pe-4">Actions</th>
+                    <th class="text-end">Authorized Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for doc in recent_documents %}
                     <tr>
-                        <td class="ps-4">
-                            <a href="{% url 'documents:detail' doc.pk %}" class="fw-semibold text-decoration-none text-dark">
+                        <td>
+                            <a href="{% url 'documents:detail' doc.pk %}" class="fw-semibold text-decoration-none" style="color: var(--tv-text-main);">
                                 <i class="bi bi-file-earmark-text text-primary me-2"></i>{{ doc.name }}
                             </a>
-                            {% if doc.description %}
-                                <div class="small text-muted text-truncate" style="max-width: 280px;">{{ doc.description }}</div>
-                            {% endif %}
                         </td>
                         <td>
-                            <span class="badge bg-secondary-subtle text-secondary">{{ doc.get_category_display }}</span>
+                            <span class="tv-pill tv-pill-primary">{{ doc.get_category_display }}</span>
                         </td>
-                        <td class="small text-muted">{{ doc.formatted_size }}</td>
+                        <td><span class="tv-code-pill">{{ doc.file_size|filesizeformat }}</span></td>
                         <td>
-                            {% if doc.active_shares %}
-                                <span class="badge bg-success-subtle text-success">
-                                    <i class="bi bi-people-fill me-1"></i> {{ doc.active_shares }} Share{{ doc.active_shares|pluralize }}
-                                </span>
+                            {% if doc.active_shares_count > 0 %}
+                                <span class="tv-pill tv-pill-success">{{ doc.active_shares_count }} user{{ doc.active_shares_count|pluralize }}</span>
                             {% else %}
-                                <span class="badge bg-light text-muted border">Private</span>
+                                <span class="text-muted small">Private (0)</span>
                             {% endif %}
                         </td>
-                        <td class="small text-muted">{{ doc.created_at|date:"M d, Y" }}</td>
-                        <td class="text-end pe-4">
+                        <td class="small" style="color: var(--tv-text-muted);">{{ doc.created_at|date:"M d, Y" }}</td>
+                        <td class="text-end">
                             <div class="btn-group btn-group-sm">
-                                <a href="{% url 'documents:detail' doc.pk %}" class="btn btn-outline-secondary" title="Details">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{% url 'documents:download' doc.pk %}" class="btn btn-outline-primary" title="Download">
+                                <a href="{% url 'documents:download' doc.pk %}" class="tv-btn tv-btn-secondary tv-btn-sm" title="Download">
                                     <i class="bi bi-download"></i>
                                 </a>
-                                <a href="{% url 'permissions:manage' doc.pk %}" class="btn btn-outline-info" title="Share & Permissions">
+                                <a href="{% url 'permissions:manage' doc.pk %}" class="tv-btn tv-btn-secondary tv-btn-sm" title="Share &amp; Permissions">
                                     <i class="bi bi-share"></i>
                                 </a>
-                                <a href="{% url 'documents:edit' doc.pk %}" class="btn btn-outline-secondary" title="Edit Metadata">
+                                <a href="{% url 'documents:edit' doc.pk %}" class="tv-btn tv-btn-secondary tv-btn-sm" title="Edit Metadata">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="{% url 'audit:document_activity' doc.pk %}" class="btn btn-outline-dark" title="Activity History">
+                                <a href="{% url 'audit:document_activity' doc.pk %}" class="tv-btn tv-btn-secondary tv-btn-sm" title="Activity History">
                                     <i class="bi bi-clock-history"></i>
+                                </a>
+                                <a href="{% url 'documents:detail' doc.pk %}" class="tv-btn tv-btn-secondary tv-btn-sm" title="Details">
+                                    <i class="bi bi-arrow-right"></i>
                                 </a>
                             </div>
                         </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <div class="text-muted mb-3">
-                                <i class="bi bi-cloud-arrow-up display-4"></i>
-                            </div>
-                            <h5 class="fw-semibold">No documents uploaded yet</h5>
-                            <p class="text-muted small">Upload your confidential documents to store them securely and share with fine-grained access controls.</p>
-                            <a href="{% url 'documents:upload' %}" class="btn btn-primary btn-sm">
-                                <i class="bi bi-plus-lg me-1"></i> Upload First Document
-                            </a>
+                        <td colspan="6" class="text-center py-4 text-muted small">
+                            No documents uploaded yet.
+                            <a href="{% url 'documents:upload' %}" class="ms-1 fw-semibold">Upload your first document &rarr;</a>
                         </td>
                     </tr>
                 {% endfor %}
@@ -177,64 +167,57 @@
     </div>
 </div>
 
-<!-- Owner Activity Feed -->
-<div class="card border-0 shadow-sm rounded-3">
-    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0">
-            <i class="bi bi-activity me-2 text-primary"></i> My Vault Activity Feed
-        </h5>
-        <span class="small text-muted">Audited actions on your documents</span>
+<!-- Recent Sharing Timeline -->
+<div class="tv-card">
+    <div class="tv-card-header">
+        <h6 class="fw-bold mb-0" style="color: var(--tv-text-main);">
+            <i class="bi bi-shield-check text-primary me-2"></i> Recent Permission Changes &amp; Grants
+        </h6>
     </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th class="ps-4">Timestamp</th>
-                    <th>Activity</th>
-                    <th>Document</th>
-                    <th>Actor / Target</th>
-                    <th>Outcome</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for event in recent_activity %}
+    <div class="tv-card-body p-0">
+        <div class="table-responsive">
+            <table class="tv-table">
+                <thead>
                     <tr>
-                        <td class="ps-4 small text-muted">{{ event.timestamp|date:"M d, Y H:i" }}</td>
-                        <td>
-                            <span class="badge {% if 'DENIED' in event.event_type %}bg-danger{% elif 'UPLOAD' in event.event_type %}bg-primary{% elif 'DOWNLOAD' in event.event_type %}bg-success{% elif 'GRANT' in event.event_type %}bg-info text-dark{% elif 'REVOKE' in event.event_type %}bg-warning text-dark{% elif 'DELETE' in event.event_type %}bg-danger{% else %}bg-secondary{% endif %}">
-                                {{ event.get_event_type_display }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if event.target_document_name_snapshot %}
-                                <span class="fw-semibold text-truncate d-inline-block" style="max-width: 250px;">
-                                    {{ event.target_document_name_snapshot }}
+                        <th>Timestamp</th>
+                        <th>Action</th>
+                        <th>Recipient</th>
+                        <th>Target Document</th>
+                        <th>Grant Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for share in recent_shares %}
+                        <tr>
+                            <td><span class="tv-code-pill">{{ share.timestamp|date:"Y-m-d H:i:s" }}</span></td>
+                            <td>
+                                <span class="tv-pill 
+                                    {% if share.event_type == 'PERMISSION_GRANTED' %}tv-pill-success
+                                    {% elif share.event_type == 'PERMISSION_REVOKED' %}tv-pill-danger
+                                    {% else %}tv-pill-warning{% endif %}">
+                                    {{ share.get_event_type_display }}
                                 </span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="fw-semibold">{{ event.actor_username }}</span>
-                            {% if event.target_username %}
-                                <span class="text-muted">&rarr; {{ event.target_username }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if event.status == 'SUCCESS' %}
-                                <span class="badge bg-success-subtle text-success">Success</span>
-                            {% else %}
-                                <span class="badge bg-danger-subtle text-danger">Denied</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">No activity recorded for your documents yet.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                            </td>
+                            <td class="fw-semibold">{{ share.target_username }}</td>
+                            <td>{{ share.target_document_name_snapshot }}</td>
+                            <td>
+                                {% if share.new_permission %}
+                                    <span class="tv-pill {% if share.new_permission == 'EDIT' %}tv-pill-warning{% else %}tv-pill-info{% endif %}">
+                                        {{ share.new_permission }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-danger small fw-semibold">REVOKED</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted small">No recent sharing activity recorded.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

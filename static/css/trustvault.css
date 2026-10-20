@@ -1,59 +1,978 @@
-/* TrustVault Custom Styling */
+/* ==========================================================================
+   TRUSTVAULT PRECISION DESIGN SYSTEM — CORE STYLESHEET (v2.0)
+   Enterprise Security SaaS UI/UX (Linear / Stripe / Apple Inspired)
+   ========================================================================== */
 
+/* Google Fonts Import: Inter & JetBrains Mono */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* --------------------------------------------------------------------------
+   1. DESIGN TOKENS & CSS VARIABLES
+   -------------------------------------------------------------------------- */
 :root {
-    --tv-primary: #0d6efd;
-    --tv-primary-dark: #0a58ca;
-    --tv-bg-subtle: #f8f9fa;
-    --tv-card-border: rgba(0, 0, 0, 0.08);
+    /* Brand Colors */
+    --tv-primary-50:  #eff6ff;
+    --tv-primary-100: #dbeafe;
+    --tv-primary-200: #bfdbfe;
+    --tv-primary-300: #93c5fd;
+    --tv-primary-400: #60a5fa;
+    --tv-primary-500: #3b82f6;
+    --tv-primary-600: #2563eb;
+    --tv-primary-700: #1d4ed8;
+    --tv-primary-800: #1e40af;
+    --tv-primary-900: #1e3a8a;
+
+    /* Neutrals */
+    --tv-gray-50:  #f8fafc;
+    --tv-gray-100: #f1f5f9;
+    --tv-gray-200: #e2e8f0;
+    --tv-gray-300: #cbd5e1;
+    --tv-gray-400: #94a3b8;
+    --tv-gray-500: #64748b;
+    --tv-gray-600: #475569;
+    --tv-gray-700: #334155;
+    --tv-gray-800: #1e293b;
+    --tv-gray-900: #0f172a;
+    --tv-gray-950: #020617;
+
+    /* Semantic Accents */
+    --tv-success: #10b981;
+    --tv-success-bg: #ecfdf5;
+    --tv-success-border: #a7f3d0;
+    --tv-warning: #f59e0b;
+    --tv-warning-bg: #fffbeb;
+    --tv-warning-border: #fde68a;
+    --tv-danger:  #ef4444;
+    --tv-danger-bg:  #fef2f2;
+    --tv-danger-border:  #fecaca;
+    --tv-info:    #06b6d4;
+    --tv-info-bg:    #ecfeff;
+    --tv-info-border:    #a5f3fc;
+
+    /* Light Theme (Default) */
+    --tv-bg-body:       var(--tv-gray-50);
+    --tv-bg-surface:    #ffffff;
+    --tv-bg-surface-elevated: #ffffff;
+    --tv-bg-subtle:     var(--tv-gray-100);
+    --tv-bg-sidebar:    #ffffff;
+    --tv-bg-topbar:     rgba(255, 255, 255, 0.85);
+
+    --tv-border-default: var(--tv-gray-200);
+    --tv-border-subtle:  #f1f5f9;
+    --tv-border-strong:  var(--tv-gray-300);
+
+    --tv-text-main:     var(--tv-gray-900);
+    --tv-text-secondary: var(--tv-gray-600);
+    --tv-text-muted:    var(--tv-gray-500);
+    --tv-text-subtle:   var(--tv-gray-400);
+
+    --tv-primary:       var(--tv-primary-600);
+    --tv-primary-hover: var(--tv-primary-700);
+    --tv-primary-light: var(--tv-primary-50);
+    --tv-primary-border: var(--tv-primary-200);
+    --tv-primary-text:  var(--tv-primary-700);
+
+    /* Shadows */
+    --tv-shadow-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
+    --tv-shadow-sm: 0 1px 3px 0 rgba(16, 24, 40, 0.08), 0 1px 2px -1px rgba(16, 24, 40, 0.04);
+    --tv-shadow-md: 0 4px 6px -1px rgba(16, 24, 40, 0.08), 0 2px 4px -2px rgba(16, 24, 40, 0.04);
+    --tv-shadow-lg: 0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.03);
+    --tv-shadow-glow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+
+    /* Typography & Sizing */
+    --tv-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --tv-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    --tv-radius-xs: 4px;
+    --tv-radius-sm: 6px;
+    --tv-radius-md: 10px;
+    --tv-radius-lg: 14px;
+    --tv-radius-xl: 20px;
+    --tv-radius-full: 9999px;
+
+    /* Transitions */
+    --tv-transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+    --tv-transition-base: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    --tv-transition-slow: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* Sidebar dimensions */
+    --tv-sidebar-width: 260px;
+    --tv-sidebar-collapsed-width: 76px;
+    --tv-topbar-height: 64px;
+}
+
+/* --------------------------------------------------------------------------
+   2. DARK THEME SPECIFICATION
+   -------------------------------------------------------------------------- */
+[data-theme="dark"] {
+    --tv-bg-body:       #080c16;
+    --tv-bg-surface:    #0f172a;
+    --tv-bg-surface-elevated: #162036;
+    --tv-bg-subtle:     #131c2e;
+    --tv-bg-sidebar:    #0c1220;
+    --tv-bg-topbar:     rgba(12, 18, 32, 0.85);
+
+    --tv-border-default: #1e293b;
+    --tv-border-subtle:  #141e30;
+    --tv-border-strong:  #334155;
+
+    --tv-text-main:     #f8fafc;
+    --tv-text-secondary: #94a3b8;
+    --tv-text-muted:    #64748b;
+    --tv-text-subtle:   #475569;
+
+    --tv-primary:       var(--tv-primary-500);
+    --tv-primary-hover: var(--tv-primary-400);
+    --tv-primary-light: rgba(59, 130, 246, 0.15);
+    --tv-primary-border: rgba(59, 130, 246, 0.3);
+    --tv-primary-text:  var(--tv-primary-300);
+
+    --tv-success-bg: rgba(16, 185, 129, 0.15);
+    --tv-success-border: rgba(16, 185, 129, 0.3);
+    --tv-warning-bg: rgba(245, 158, 11, 0.15);
+    --tv-warning-border: rgba(245, 158, 11, 0.3);
+    --tv-danger-bg:  rgba(239, 68, 68, 0.15);
+    --tv-danger-border:  rgba(239, 68, 68, 0.3);
+    --tv-info-bg:    rgba(6, 182, 212, 0.15);
+    --tv-info-border:    rgba(6, 182, 212, 0.3);
+
+    --tv-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+    --tv-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+    --tv-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --tv-shadow-lg: 0 12px 16px -4px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+    --tv-shadow-glow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   3. BASE RESET & TYPOGRAPHY
+   -------------------------------------------------------------------------- */
+* {
+    box-sizing: border-box;
 }
 
 body {
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    color: #212529;
+    font-family: var(--tv-font-sans);
+    background-color: var(--tv-bg-body);
+    color: var(--tv-text-main);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color var(--tv-transition-base), color var(--tv-transition-base);
+    min-height: 100vh;
 }
 
-.navbar-brand {
-    letter-spacing: -0.5px;
+h1, h2, h3, h4, h5, h6 {
+    color: var(--tv-text-main);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-top: 0;
 }
 
-.card {
-    border-color: var(--tv-card-border);
-    transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+p {
+    color: var(--tv-text-secondary);
 }
 
-.card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.12) !important;
+a {
+    color: var(--tv-primary);
+    text-decoration: none;
+    transition: color var(--tv-transition-fast);
 }
 
-.badge {
-    font-weight: 500;
-    letter-spacing: 0.3px;
+a:hover {
+    color: var(--tv-primary-hover);
 }
 
-.table th {
-    font-size: 0.85rem;
+code, kbd, samp, pre {
+    font-family: var(--tv-font-mono);
+}
+
+/* Focus Visibility Standards (WCAG 2.2 AA) */
+:focus-visible {
+    outline: 2px solid var(--tv-primary);
+    outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   4. APPLICATION SHELL & LAYOUT ARCHITECTURE
+   -------------------------------------------------------------------------- */
+.tv-app-shell {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--tv-bg-body);
+}
+
+/* Sidebar Component */
+.tv-sidebar {
+    width: var(--tv-sidebar-width);
+    background-color: var(--tv-bg-sidebar);
+    border-right: 1px solid var(--tv-border-default);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1030;
+    transition: transform var(--tv-transition-base), width var(--tv-transition-base);
+}
+
+.tv-sidebar-brand {
+    height: var(--tv-topbar-height);
+    padding: 0 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--tv-border-subtle);
+}
+
+.tv-brand-link {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    color: var(--tv-text-main);
+    font-weight: 700;
+    font-size: 1.125rem;
+    letter-spacing: -0.03em;
+}
+
+.tv-brand-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--tv-radius-md);
+    background: linear-gradient(135deg, var(--tv-primary-500), var(--tv-primary-700));
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.tv-sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.tv-nav-section-title {
+    font-size: 0.6875rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.08em;
+    color: var(--tv-text-muted);
+    padding: 0.75rem 0.75rem 0.375rem 0.75rem;
+}
+
+.tv-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--tv-radius-md);
+    color: var(--tv-text-secondary);
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all var(--tv-transition-fast);
+    position: relative;
+}
+
+.tv-nav-item i {
+    font-size: 1.125rem;
+    color: var(--tv-text-muted);
+    transition: color var(--tv-transition-fast);
+}
+
+.tv-nav-item:hover {
+    color: var(--tv-text-main);
+    background-color: var(--tv-bg-subtle);
+}
+
+.tv-nav-item:hover i {
+    color: var(--tv-primary);
+}
+
+.tv-nav-item.active {
+    color: var(--tv-primary);
+    background-color: var(--tv-primary-light);
     font-weight: 600;
 }
 
-.audit-badge {
-    font-family: monospace;
-    font-size: 0.8rem;
+.tv-nav-item.active i {
+    color: var(--tv-primary);
 }
 
-.btn {
-    font-weight: 500;
-    border-radius: 0.375rem;
+.tv-nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: -0.75rem;
+    top: 0.375rem;
+    bottom: 0.375rem;
+    width: 3px;
+    border-radius: 0 2px 2px 0;
+    background-color: var(--tv-primary);
 }
 
-/* File icon helpers */
-.file-icon {
+.tv-nav-badge {
+    margin-left: auto;
+    font-size: 0.6875rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--tv-radius-full);
+}
+
+.tv-sidebar-footer {
+    padding: 1rem 0.75rem;
+    border-top: 1px solid var(--tv-border-subtle);
+    background-color: var(--tv-bg-sidebar);
+}
+
+.tv-user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: var(--tv-radius-md);
+    background-color: var(--tv-bg-subtle);
+}
+
+.tv-user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--tv-radius-full);
+    background-color: var(--tv-primary);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.tv-user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tv-user-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--tv-text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tv-user-role {
+    font-size: 0.6875rem;
+    color: var(--tv-text-muted);
+}
+
+/* Main Content Area */
+.tv-main-viewport {
+    flex: 1;
+    margin-left: var(--tv-sidebar-width);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 100vh;
+    transition: margin-left var(--tv-transition-base);
+}
+
+/* Topbar Component */
+.tv-topbar {
+    height: var(--tv-topbar-height);
+    background-color: var(--tv-bg-topbar);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--tv-border-default);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.tv-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--tv-text-muted);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tv-breadcrumb a {
+    color: var(--tv-text-secondary);
+}
+
+.tv-breadcrumb a:hover {
+    color: var(--tv-primary);
+}
+
+.tv-breadcrumb-sep {
+    font-size: 0.75rem;
+    color: var(--tv-text-subtle);
+}
+
+.tv-breadcrumb-current {
+    font-weight: 600;
+    color: var(--tv-text-main);
+}
+
+.tv-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Theme Toggle Button */
+.tv-theme-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--tv-radius-md);
+    border: 1px solid var(--tv-border-default);
+    background-color: var(--tv-bg-surface);
+    color: var(--tv-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--tv-transition-fast);
+}
+
+.tv-theme-toggle:hover {
+    color: var(--tv-primary);
+    background-color: var(--tv-bg-subtle);
+    border-color: var(--tv-border-strong);
+}
+
+/* Page Container */
+.tv-page-content {
+    flex: 1;
+    padding: 1.75rem 1.75rem 2.5rem 1.75rem;
+    max-width: 1440px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Mobile Sidebar Drawer */
+.tv-mobile-nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--tv-text-main);
+    font-size: 1.25rem;
+    padding: 0.5rem;
+    cursor: pointer;
+}
+
+.tv-sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1025;
+}
+
+@media (max-width: 991.98px) {
+    .tv-sidebar {
+        transform: translateX(-100%);
+    }
+
+    .tv-sidebar.show {
+        transform: translateX(0);
+    }
+
+    .tv-sidebar-backdrop.show {
+        display: block;
+    }
+
+    .tv-main-viewport {
+        margin-left: 0;
+    }
+
+    .tv-mobile-nav-toggle {
+        display: block;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   5. CARDS & ELEVATED SURFACES
+   -------------------------------------------------------------------------- */
+.tv-card {
+    background-color: var(--tv-bg-surface);
+    border: 1px solid var(--tv-border-default);
+    border-radius: var(--tv-radius-lg);
+    box-shadow: var(--tv-shadow-sm);
+    transition: transform var(--tv-transition-fast), box-shadow var(--tv-transition-fast), border-color var(--tv-transition-fast);
+    overflow: hidden;
+}
+
+.tv-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--tv-shadow-md);
+    border-color: var(--tv-border-strong);
+}
+
+.tv-card-header {
+    padding: 1.125rem 1.25rem;
+    border-bottom: 1px solid var(--tv-border-subtle);
+    background-color: var(--tv-bg-surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tv-card-body {
+    padding: 1.25rem;
+}
+
+.tv-card-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--tv-border-subtle);
+    background-color: var(--tv-bg-subtle);
+}
+
+/* Stat Metric Card */
+.tv-stat-card {
+    background-color: var(--tv-bg-surface);
+    border: 1px solid var(--tv-border-default);
+    border-radius: var(--tv-radius-lg);
+    padding: 1.25rem;
+    box-shadow: var(--tv-shadow-sm);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--tv-transition-fast);
+}
+
+.tv-stat-card:hover {
+    border-color: var(--tv-primary-border);
+    box-shadow: var(--tv-shadow-md);
+    transform: translateY(-2px);
+}
+
+.tv-stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.tv-stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--tv-text-muted);
+}
+
+.tv-stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--tv-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.125rem;
+    flex-shrink: 0;
+}
+
+.tv-stat-value {
     font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--tv-text-main);
+    line-height: 1;
+    margin-bottom: 0.375rem;
 }
 
-/* Flash alerts */
-.alert {
-    border-radius: 0.5rem;
+.tv-stat-subtext {
+    font-size: 0.8125rem;
+    color: var(--tv-text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   6. BUTTONS & ACTIONS
+   -------------------------------------------------------------------------- */
+.tv-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.5625rem 1rem;
+    border-radius: var(--tv-radius-md);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--tv-transition-fast);
+    line-height: 1.25;
+    white-space: nowrap;
+}
+
+.tv-btn:active {
+    transform: scale(0.98);
+}
+
+.tv-btn-primary {
+    background-color: var(--tv-primary);
+    color: #ffffff;
+    box-shadow: var(--tv-shadow-xs);
+}
+
+.tv-btn-primary:hover {
+    background-color: var(--tv-primary-hover);
+    color: #ffffff;
+    box-shadow: var(--tv-shadow-sm);
+}
+
+.tv-btn-secondary {
+    background-color: var(--tv-bg-surface);
+    color: var(--tv-text-main);
+    border-color: var(--tv-border-default);
+}
+
+.tv-btn-secondary:hover {
+    background-color: var(--tv-bg-subtle);
+    color: var(--tv-text-main);
+    border-color: var(--tv-border-strong);
+}
+
+.tv-btn-danger {
+    background-color: var(--tv-danger);
+    color: #ffffff;
+}
+
+.tv-btn-danger:hover {
+    background-color: #dc2626;
+    color: #ffffff;
+}
+
+.tv-btn-outline-danger {
+    background-color: transparent;
+    color: var(--tv-danger);
+    border-color: var(--tv-danger-border);
+}
+
+.tv-btn-outline-danger:hover {
+    background-color: var(--tv-danger-bg);
+    border-color: var(--tv-danger);
+    color: var(--tv-danger);
+}
+
+.tv-btn-ghost {
+    background-color: transparent;
+    color: var(--tv-text-secondary);
+}
+
+.tv-btn-ghost:hover {
+    background-color: var(--tv-bg-subtle);
+    color: var(--tv-text-main);
+}
+
+.tv-btn-sm {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--tv-radius-sm);
+}
+
+.tv-btn-lg {
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--tv-radius-md);
+}
+
+/* --------------------------------------------------------------------------
+   7. BADGES & STATUS PILLS
+   -------------------------------------------------------------------------- */
+.tv-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.625rem;
+    border-radius: var(--tv-radius-full);
+    border: 1px solid transparent;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.tv-pill-primary {
+    background-color: var(--tv-primary-light);
+    color: var(--tv-primary-text);
+    border-color: var(--tv-primary-border);
+}
+
+.tv-pill-success {
+    background-color: var(--tv-success-bg);
+    color: var(--tv-success);
+    border-color: var(--tv-success-border);
+}
+
+.tv-pill-warning {
+    background-color: var(--tv-warning-bg);
+    color: var(--tv-warning);
+    border-color: var(--tv-warning-border);
+}
+
+.tv-pill-danger {
+    background-color: var(--tv-danger-bg);
+    color: var(--tv-danger);
+    border-color: var(--tv-danger-border);
+}
+
+.tv-pill-info {
+    background-color: var(--tv-info-bg);
+    color: var(--tv-info);
+    border-color: var(--tv-info-border);
+}
+
+.tv-pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--tv-radius-full);
+    background-color: currentColor;
+}
+
+/* --------------------------------------------------------------------------
+   8. DATA TABLES
+   -------------------------------------------------------------------------- */
+.tv-table-wrapper {
+    background-color: var(--tv-bg-surface);
+    border: 1px solid var(--tv-border-default);
+    border-radius: var(--tv-radius-lg);
+    box-shadow: var(--tv-shadow-sm);
+    overflow: hidden;
+}
+
+.tv-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 0;
+}
+
+.tv-table th {
+    background-color: var(--tv-bg-subtle);
+    color: var(--tv-text-muted);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--tv-border-default);
+    white-space: nowrap;
+    text-align: left;
+}
+
+.tv-table td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid var(--tv-border-subtle);
+    color: var(--tv-text-main);
+    font-size: 0.875rem;
+    vertical-align: middle;
+    background-color: var(--tv-bg-surface);
+    transition: background-color var(--tv-transition-fast);
+}
+
+.tv-table tbody tr:hover td {
+    background-color: var(--tv-bg-subtle);
+}
+
+.tv-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.tv-code-pill {
+    font-family: var(--tv-font-mono);
+    font-size: 0.75rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--tv-radius-xs);
+    background-color: var(--tv-bg-subtle);
+    border: 1px solid var(--tv-border-subtle);
+    color: var(--tv-text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   9. FORM CONTROLS & INPUTS
+   -------------------------------------------------------------------------- */
+.tv-form-group {
+    margin-bottom: 1.25rem;
+}
+
+.tv-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--tv-text-main);
+    margin-bottom: 0.375rem;
+}
+
+.tv-input,
+.tv-select,
+.tv-textarea {
+    width: 100%;
+    background-color: var(--tv-bg-surface);
+    color: var(--tv-text-main);
+    border: 1px solid var(--tv-border-default);
+    border-radius: var(--tv-radius-md);
+    padding: 0.5625rem 0.875rem;
+    font-size: 0.875rem;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: all var(--tv-transition-fast);
+}
+
+.tv-input:focus,
+.tv-select:focus,
+.tv-textarea:focus {
+    border-color: var(--tv-primary);
+    box-shadow: var(--tv-shadow-glow);
+    outline: none;
+}
+
+.tv-password-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.tv-password-wrap .tv-input {
+    padding-right: 2.5rem;
+}
+
+.tv-password-toggle {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    color: var(--tv-text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tv-password-toggle:hover {
+    color: var(--tv-text-main);
+}
+
+/* --------------------------------------------------------------------------
+   10. FILE UPLOAD DROPZONE
+   -------------------------------------------------------------------------- */
+.tv-dropzone {
+    border: 2px dashed var(--tv-border-strong);
+    border-radius: var(--tv-radius-lg);
+    background-color: var(--tv-bg-subtle);
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--tv-transition-fast);
+    position: relative;
+}
+
+.tv-dropzone:hover,
+.tv-dropzone.dragover {
+    border-color: var(--tv-primary);
+    background-color: var(--tv-primary-light);
+}
+
+.tv-dropzone-icon {
+    font-size: 2.5rem;
+    color: var(--tv-primary);
+    margin-bottom: 0.75rem;
+}
+
+.tv-dropzone-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--tv-text-main);
+    margin-bottom: 0.25rem;
+}
+
+.tv-dropzone-desc {
+    font-size: 0.8125rem;
+    color: var(--tv-text-muted);
+}
+
+.tv-dropzone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   11. ALERTS & NOTIFICATIONS
+   -------------------------------------------------------------------------- */
+.tv-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--tv-radius-md);
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+    margin-bottom: 1.25rem;
+}
+
+.tv-alert-info {
+    background-color: var(--tv-info-bg);
+    border-color: var(--tv-info-border);
+    color: var(--tv-info);
+}
+
+.tv-alert-success {
+    background-color: var(--tv-success-bg);
+    border-color: var(--tv-success-border);
+    color: var(--tv-success);
+}
+
+.tv-alert-warning {
+    background-color: var(--tv-warning-bg);
+    border-color: var(--tv-warning-border);
+    color: var(--tv-warning);
+}
+
+.tv-alert-danger {
+    background-color: var(--tv-danger-bg);
+    border-color: var(--tv-danger-border);
+    color: var(--tv-danger);
+}
+
+/* --------------------------------------------------------------------------
+   12. ANIMATIONS & MICRO-INTERACTIONS
+   -------------------------------------------------------------------------- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tv-animate-fade {
+    animation: fadeIn var(--tv-transition-base) forwards;
+}
+
+/* Reduced Motion Compliance */
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

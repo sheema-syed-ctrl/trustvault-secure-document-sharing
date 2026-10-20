@@ -1,28 +1,37 @@
 {% extends 'base.html' %}
 
-{% block title %}Audit Trail — TrustVault Admin{% endblock %}
+{% block title %}Global Audit Trail — TrustVault Admin{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
     <div>
-        <h2 class="fw-bold mb-1">
-            <i class="bi bi-shield-check text-primary me-2"></i> Global Audit Trail &amp; Activity Monitor
-        </h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}" class="text-decoration-none text-muted">Dashboard</a></li>
+                <li class="breadcrumb-item active text-primary fw-medium" aria-current="page">Global Audit Trail</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-1 d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check text-primary"></i>
+            Global Audit Trail &amp; Activity Monitor
+        </h1>
         <p class="text-muted small mb-0">
-            Append-only, persistent record of document and permission events. Total Recorded Events: <strong>{{ total_events_count }}</strong>
+            Immutable, append-only record of all security-sensitive platform operations. Total logged events: <strong>{{ total_events_count }}</strong>
         </p>
     </div>
-    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
-        <i class="bi bi-lock-fill me-1"></i> Administrator Audit Inspection
-    </span>
+    <div class="d-flex align-items-center gap-2">
+        <span class="tv-badge tv-badge-danger px-3 py-2">
+            <i class="bi bi-lock-fill"></i> Read-Only Audit Isolation
+        </span>
+    </div>
 </div>
 
 <!-- Filters Card -->
-<div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-body p-4">
+<div class="tv-card mb-4">
+    <div class="p-3 p-md-4">
         <form method="get" action="{% url 'audit:trail' %}" class="row g-3 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label small text-uppercase fw-semibold text-secondary">Event Type</label>
+            <div class="col-12 col-sm-6 col-md-3">
+                <label class="form-label small text-uppercase fw-semibold text-secondary mb-1">Event Type</label>
                 <select name="event_type" class="form-select form-select-sm">
                     <option value="">All Event Types</option>
                     {% for code, label in event_types %}
@@ -30,21 +39,21 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2">
-                <label class="form-label small text-uppercase fw-semibold text-secondary">Actor Username</label>
-                <input type="text" name="actor" class="form-control form-control-sm" placeholder="e.g. alice_owner" value="{{ actor_query }}">
+            <div class="col-12 col-sm-6 col-md-2">
+                <label class="form-label small text-uppercase fw-semibold text-secondary mb-1">Actor Username</label>
+                <input type="text" name="actor" class="form-control form-control-sm font-monospace" placeholder="e.g. alice_owner" value="{{ actor_query }}">
             </div>
-            <div class="col-md-2">
-                <label class="form-label small text-uppercase fw-semibold text-secondary">Date From</label>
+            <div class="col-6 col-md-2">
+                <label class="form-label small text-uppercase fw-semibold text-secondary mb-1">Date From</label>
                 <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
             </div>
-            <div class="col-md-2">
-                <label class="form-label small text-uppercase fw-semibold text-secondary">Date To</label>
+            <div class="col-6 col-md-2">
+                <label class="form-label small text-uppercase fw-semibold text-secondary mb-1">Date To</label>
                 <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
             </div>
-            <div class="col-md-3 d-flex gap-2">
+            <div class="col-12 col-md-3 d-flex gap-2">
                 <button type="submit" class="btn btn-primary btn-sm flex-grow-1 shadow-sm">
-                    <i class="bi bi-funnel-fill me-1"></i> Apply Filter
+                    <i class="bi bi-funnel-fill me-1"></i> Filter Events
                 </button>
                 <a href="{% url 'audit:trail' %}" class="btn btn-outline-secondary btn-sm" title="Reset Filters">
                     <i class="bi bi-arrow-counterclockwise"></i>
@@ -55,193 +64,208 @@
 </div>
 
 <!-- Audit Trail Table -->
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+<div class="tv-card overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table tv-table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4">Timestamp (UTC)</th>
+                    <th>Event Type</th>
+                    <th>Status</th>
+                    <th>Actor</th>
+                    <th>Target Document</th>
+                    <th>Recipient / Delta</th>
+                    <th>Client IP</th>
+                    <th class="text-end pe-4">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in page_obj %}
                     <tr>
-                        <th class="ps-4">Timestamp (UTC)</th>
-                        <th>Event</th>
-                        <th>Status</th>
-                        <th>Actor</th>
-                        <th>Target Document</th>
-                        <th>Recipient / Permission Change</th>
-                        <th>IP Address</th>
-                        <th class="text-end pe-4">Details</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for event in page_obj %}
-                        <tr>
-                            <td class="ps-4 text-nowrap">
-                                <span class="fw-semibold small font-monospace">{{ event.timestamp|date:"Y-m-d H:i:s" }}</span>
-                            </td>
-                            <td>
-                                {% if event.event_type == 'DOCUMENT_UPLOADED' %}
-                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
-                                        <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload
-                                    </span>
-                                {% elif event.event_type == 'DOCUMENT_DOWNLOADED' %}
-                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1">
-                                        <i class="bi bi-download me-1"></i> Download
-                                    </span>
-                                {% elif event.event_type == 'DOCUMENT_UPDATED' %}
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
-                                        <i class="bi bi-pencil-square me-1"></i> Update
-                                    </span>
-                                {% elif event.event_type == 'DOCUMENT_DELETED' %}
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
-                                        <i class="bi bi-trash3-fill me-1"></i> Delete
-                                    </span>
-                                {% elif event.event_type == 'PERMISSION_GRANTED' %}
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
-                                        <i class="bi bi-person-plus-fill me-1"></i> Grant
-                                    </span>
-                                {% elif event.event_type == 'PERMISSION_UPDATED' %}
-                                    <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle px-2 py-1">
-                                        <i class="bi bi-arrow-repeat me-1"></i> Perm Update
-                                    </span>
-                                {% elif event.event_type == 'PERMISSION_REVOKED' %}
-                                    <span class="badge bg-dark-subtle text-dark border border-dark-subtle px-2 py-1">
-                                        <i class="bi bi-person-x-fill me-1"></i> Revoke
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-danger text-white px-2 py-1">
-                                        <i class="bi bi-shield-slash-fill me-1"></i> {{ event.event_type }}
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if event.status == 'SUCCESS' %}
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle small">SUCCESS</span>
-                                {% elif event.status == 'FAILURE' %}
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle small">FAILURE</span>
-                                {% else %}
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle small">{{ event.status }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if event.actor %}
+                        <td class="ps-4 text-nowrap">
+                            <span class="small font-monospace text-secondary fw-semibold">
+                                {{ event.timestamp|date:"Y-m-d H:i:s" }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if event.event_type == 'DOCUMENT_UPLOADED' %}
+                                <span class="tv-badge tv-badge-primary">
+                                    <i class="bi bi-cloud-arrow-up-fill"></i> Upload
+                                </span>
+                            {% elif event.event_type == 'DOCUMENT_DOWNLOADED' %}
+                                <span class="tv-badge tv-badge-info">
+                                    <i class="bi bi-download"></i> Download
+                                </span>
+                            {% elif event.event_type == 'DOCUMENT_UPDATED' %}
+                                <span class="tv-badge tv-badge-warning">
+                                    <i class="bi bi-pencil-square"></i> Update
+                                </span>
+                            {% elif event.event_type == 'DOCUMENT_DELETED' %}
+                                <span class="tv-badge tv-badge-danger">
+                                    <i class="bi bi-trash3-fill"></i> Delete
+                                </span>
+                            {% elif event.event_type == 'PERMISSION_GRANTED' %}
+                                <span class="tv-badge tv-badge-success">
+                                    <i class="bi bi-person-plus-fill"></i> Grant
+                                </span>
+                            {% elif event.event_type == 'PERMISSION_UPDATED' %}
+                                <span class="tv-badge tv-badge-secondary">
+                                    <i class="bi bi-arrow-repeat"></i> Perm Edit
+                                </span>
+                            {% elif event.event_type == 'PERMISSION_REVOKED' %}
+                                <span class="tv-badge tv-badge-danger">
+                                    <i class="bi bi-person-x-fill"></i> Revoke
+                                </span>
+                            {% else %}
+                                <span class="tv-badge tv-badge-danger">
+                                    <i class="bi bi-shield-slash-fill"></i> {{ event.event_type }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.status == 'SUCCESS' %}
+                                <span class="tv-badge tv-badge-success small">SUCCESS</span>
+                            {% elif event.status == 'FAILURE' %}
+                                <span class="tv-badge tv-badge-danger small">FAILURE</span>
+                            {% else %}
+                                <span class="tv-badge tv-badge-warning small">{{ event.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.actor %}
+                                <div class="d-flex align-items-center gap-1">
                                     <span class="fw-semibold">{{ event.actor_username }}</span>
-                                    <span class="badge bg-light text-secondary border small ms-1">{{ event.actor.get_role_display }}</span>
-                                {% else %}
-                                    <span class="text-muted fst-italic">{{ event.actor_username|default:"SYSTEM" }}</span>
+                                    <span class="tv-badge tv-badge-secondary small ms-1">{{ event.actor.get_role_display }}</span>
+                                </div>
+                            {% else %}
+                                <span class="text-muted fst-italic">{{ event.actor_username|default:"SYSTEM" }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.target_document %}
+                                <div class="fw-semibold text-truncate" style="max-width: 190px;" title="{{ event.target_document_name_snapshot }}">
+                                    {{ event.target_document_name_snapshot }}
+                                </div>
+                                <div class="text-muted small font-monospace">Doc #{{ event.target_document_id_snapshot }}</div>
+                            {% elif event.target_document_name_snapshot %}
+                                <div class="text-muted text-truncate" style="max-width: 190px;" title="{{ event.target_document_name_snapshot }}">
+                                    {{ event.target_document_name_snapshot }} <span class="tv-badge tv-badge-secondary small">Deleted</span>
+                                </div>
+                                <div class="text-muted small font-monospace">Doc #{{ event.target_document_id_snapshot }}</div>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.target_username %}
+                                <div><strong class="font-monospace small">{{ event.target_username }}</strong></div>
+                                {% if event.previous_permission and event.new_permission %}
+                                    <div class="small text-muted font-monospace">{{ event.previous_permission }} &rarr; <span class="text-primary fw-semibold">{{ event.new_permission }}</span></div>
+                                {% elif event.new_permission %}
+                                    <div class="small text-success font-monospace">+ {{ event.new_permission }}</div>
+                                {% elif event.previous_permission %}
+                                    <div class="small text-danger font-monospace">- {{ event.previous_permission }}</div>
                                 {% endif %}
-                            </td>
-                            <td>
-                                {% if event.target_document %}
-                                    <div class="fw-semibold text-truncate" style="max-width: 180px;">{{ event.target_document_name_snapshot }}</div>
-                                    <div class="text-muted small font-monospace">Doc #{{ event.target_document_id_snapshot }}</div>
-                                {% elif event.target_document_name_snapshot %}
-                                    <div class="text-muted text-truncate" style="max-width: 180px;">
-                                        {{ event.target_document_name_snapshot }} <span class="badge bg-light text-secondary border small">Deleted</span>
-                                    </div>
-                                    <div class="text-muted small font-monospace">Doc #{{ event.target_document_id_snapshot }}</div>
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if event.target_username %}
-                                    <div><strong>{{ event.target_username }}</strong></div>
-                                    {% if event.previous_permission and event.new_permission %}
-                                        <div class="small text-muted font-monospace">{{ event.previous_permission }} &rarr; <span class="text-primary fw-semibold">{{ event.new_permission }}</span></div>
-                                    {% elif event.new_permission %}
-                                        <div class="small text-success font-monospace">Granted: {{ event.new_permission }}</div>
-                                    {% elif event.previous_permission %}
-                                        <div class="small text-danger font-monospace">Revoked: {{ event.previous_permission }}</div>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="font-monospace small text-muted">{{ event.ip_address|default:"—" }}</span>
-                            </td>
-                            <td class="text-end pe-4">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#eventModal{{ event.id }}">
-                                    <i class="bi bi-info-circle"></i>
-                                </button>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="font-monospace small text-secondary">{{ event.ip_address|default:"—" }}</span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#eventModal{{ event.id }}" title="View Audit Details">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
 
-                                <!-- Event Detail Modal -->
-                                <div class="modal fade" id="eventModal{{ event.id }}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered">
-                                        <div class="modal-content border-0 shadow">
-                                            <div class="modal-header bg-dark text-white">
-                                                <h6 class="modal-title mb-0">
-                                                    <i class="bi bi-journal-text me-2"></i> Audit Event Details
-                                                </h6>
-                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <!-- Event Detail Modal -->
+                            <div class="modal fade" id="eventModal{{ event.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow-lg" style="background: var(--tv-surface-card);">
+                                        <div class="modal-header border-bottom" style="border-color: var(--tv-border) !important;">
+                                            <h6 class="modal-title mb-0 fw-bold d-flex align-items-center gap-2">
+                                                <i class="bi bi-journal-text text-primary"></i> Audit Event Detail
+                                            </h6>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-start p-4">
+                                            <div class="mb-3">
+                                                <span class="text-muted small text-uppercase fw-semibold d-block mb-1">Event UUID</span>
+                                                <div class="d-flex align-items-center justify-content-between p-2 rounded bg-body-tertiary font-monospace small">
+                                                    <span>{{ event.uuid }}</span>
+                                                    <button type="button" class="btn btn-sm btn-link p-0 text-muted" onclick="navigator.clipboard.writeText('{{ event.uuid }}')" title="Copy UUID">
+                                                        <i class="bi bi-clipboard"></i>
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div class="modal-body text-start p-4">
-                                                <ul class="list-group list-group-flush small mb-3">
-                                                    <li class="list-group-item px-0 d-flex justify-content-between">
-                                                        <span class="text-muted">Event UUID:</span>
-                                                        <span class="font-monospace">{{ event.uuid }}</span>
-                                                    </li>
-                                                    <li class="list-group-item px-0 d-flex justify-content-between">
-                                                        <span class="text-muted">Timestamp:</span>
-                                                        <span class="fw-semibold">{{ event.timestamp|date:"Y-m-d H:i:s T" }}</span>
-                                                    </li>
-                                                    <li class="list-group-item px-0 d-flex justify-content-between">
-                                                        <span class="text-muted">Event Type:</span>
-                                                        <span class="fw-semibold">{{ event.get_event_type_display }}</span>
-                                                    </li>
-                                                    <li class="list-group-item px-0 d-flex justify-content-between">
-                                                        <span class="text-muted">Status:</span>
-                                                        <span>{{ event.status }}</span>
-                                                    </li>
-                                                    <li class="list-group-item px-0 d-flex justify-content-between">
-                                                        <span class="text-muted">Actor:</span>
-                                                        <span class="fw-semibold">{{ event.actor_username }}</span>
-                                                    </li>
-                                                    <li class="list-group-item px-0 d-flex justify-content-between">
-                                                        <span class="text-muted">Target Document:</span>
-                                                        <span>{{ event.target_document_name_snapshot|default:"N/A" }}</span>
-                                                    </li>
-                                                    <li class="list-group-item px-0 d-flex justify-content-between">
-                                                        <span class="text-muted">Client IP:</span>
-                                                        <span class="font-monospace">{{ event.ip_address|default:"N/A" }}</span>
-                                                    </li>
-                                                    <li class="list-group-item px-0 d-flex justify-content-between">
-                                                        <span class="text-muted">User Agent:</span>
-                                                        <span class="text-truncate ms-2 font-monospace" style="max-width: 260px;" title="{{ event.user_agent }}">{{ event.user_agent|default:"N/A" }}</span>
-                                                    </li>
-                                                </ul>
 
-                                                {% if event.metadata %}
-                                                    <h6 class="small text-uppercase fw-bold text-secondary mb-2">Sanitized Metadata</h6>
-                                                    <div class="bg-light p-3 rounded font-monospace small border">
-                                                        <pre class="mb-0 text-start" style="white-space: pre-wrap;">{{ event.metadata }}</pre>
+                                            <div class="row g-2 small mb-3">
+                                                <div class="col-6">
+                                                    <span class="text-muted d-block">Timestamp (UTC)</span>
+                                                    <span class="fw-semibold font-monospace">{{ event.timestamp|date:"Y-m-d H:i:s T" }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <span class="text-muted d-block">Event Type</span>
+                                                    <span class="fw-semibold">{{ event.get_event_type_display }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <span class="text-muted d-block">Execution Status</span>
+                                                    <span class="fw-semibold">{{ event.status }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <span class="text-muted d-block">Actor</span>
+                                                    <span class="fw-semibold">{{ event.actor_username }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <span class="text-muted d-block">Target Document</span>
+                                                    <span>{{ event.target_document_name_snapshot|default:"N/A" }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <span class="text-muted d-block">Client IP Address</span>
+                                                    <span class="font-monospace">{{ event.ip_address|default:"N/A" }}</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <span class="text-muted small d-block mb-1">User Agent Header</span>
+                                                <div class="p-2 rounded bg-body-tertiary font-monospace small text-break text-secondary" style="max-height: 80px; overflow-y: auto;">
+                                                    {{ event.user_agent|default:"N/A" }}
+                                                </div>
+                                            </div>
+
+                                            {% if event.metadata %}
+                                                <div>
+                                                    <span class="text-muted small text-uppercase fw-semibold d-block mb-1">Sanitized Metadata</span>
+                                                    <div class="p-3 rounded bg-body-tertiary font-monospace small border" style="border-color: var(--tv-border) !important;">
+                                                        <pre class="mb-0 text-start" style="white-space: pre-wrap; word-break: break-all;">{{ event.metadata }}</pre>
                                                     </div>
-                                                {% endif %}
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                                            </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer border-top" style="border-color: var(--tv-border) !important;">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
                                         </div>
                                     </div>
                                 </div>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">
-                                <i class="bi bi-journal-x fs-1 d-block mb-3 text-secondary"></i>
-                                <h6>No audit events found</h6>
-                                <p class="small mb-0">No activity matches the current query or filter criteria.</p>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <i class="bi bi-journal-x fs-1 d-block mb-3 text-secondary"></i>
+                            <h6 class="fw-bold mb-1">No audit events found</h6>
+                            <p class="text-muted small mb-0">No activity matches the current query or filter criteria.</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
     <!-- Pagination -->
     {% if page_obj.has_other_pages %}
-        <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center">
+        <div class="p-3 border-top d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2" style="border-color: var(--tv-border) !important; background: var(--tv-surface-card);">
             <span class="text-muted small">
                 Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} total events)
             </span>

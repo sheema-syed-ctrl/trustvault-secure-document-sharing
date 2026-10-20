@@ -1,21 +1,21 @@
 {% if messages %}
-    <div class="row">
-        <div class="col-12">
-            {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+    <div class="tv-messages-container mb-4">
+        {% for message in messages %}
+            <div class="tv-alert {% if message.tags == 'error' or message.tags == 'danger' %}tv-alert-danger{% elif message.tags == 'success' %}tv-alert-success{% elif message.tags == 'warning' %}tv-alert-warning{% else %}tv-alert-info{% endif %} d-flex justify-content-between align-items-center shadow-sm" role="alert">
+                <div class="d-flex align-items-center gap-2">
                     {% if message.tags == 'error' or message.tags == 'danger' %}
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <i class="bi bi-exclamation-octagon-fill fs-5 text-danger"></i>
                     {% elif message.tags == 'success' %}
-                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <i class="bi bi-check-circle-fill fs-5 text-success"></i>
                     {% elif message.tags == 'warning' %}
-                        <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        <i class="bi bi-exclamation-triangle-fill fs-5 text-warning"></i>
                     {% else %}
-                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <i class="bi bi-info-circle-fill fs-5 text-info"></i>
                     {% endif %}
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <span class="fw-medium">{{ message }}</span>
                 </div>
-            {% endfor %}
-        </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Dismiss message" onclick="this.closest('.tv-alert').remove()"></button>
+            </div>
+        {% endfor %}
     </div>
 {% endif %}

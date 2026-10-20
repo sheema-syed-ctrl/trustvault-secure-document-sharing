@@ -3,92 +3,103 @@
 {% block title %}TrustVault — Secure Document Sharing with a Real Audit Trail{% endblock %}
 
 {% block content %}
-<div class="row align-items-center py-5">
+<!-- Hero Section -->
+<div class="row align-items-center py-5 my-2">
     <div class="col-lg-7">
-        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill mb-3">
-            <i class="bi bi-shield-lock me-1"></i> Snovasys Fresher Hiring Challenge 2026
-        </span>
-        <h1 class="display-4 fw-bold text-body-emphasis mb-3">
+        <div class="d-inline-flex align-items-center gap-2 tv-pill tv-pill-primary px-3 py-1.5 mb-3 shadow-xs">
+            <span class="tv-pill-dot"></span>
+            <span>Enterprise Security Platform &bull; Snovasys 2026</span>
+        </div>
+        <h1 class="display-4 fw-bold mb-3" style="color: var(--tv-text-main); letter-spacing: -0.035em;">
             Secure Document Sharing with a <span class="text-primary">Real Audit Trail</span>
         </h1>
-        <p class="lead text-muted mb-4">
-            TrustVault enforces strict server-side authorization, zero-trust document storage,
-            granular read/edit permissions, instant revocation, and tamper-resistant audit logging.
+        <p class="lead mb-4" style="color: var(--tv-text-secondary); max-width: 600px; font-size: 1.125rem;">
+            Your documents. Your permissions. Your control. Every action permanently accountable.
+            TrustVault enforces server-side object authorization, zero-trust storage isolation, and granular instant revocation.
         </p>
         <div class="d-flex flex-wrap gap-3">
-            <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg px-4 gap-3 shadow-sm">
-                <i class="bi bi-box-arrow-in-right me-1"></i> Access TrustVault
+            <a href="{% url 'accounts:login' %}" class="tv-btn tv-btn-primary tv-btn-lg shadow-sm">
+                <i class="bi bi-box-arrow-in-right"></i> Access Secure Vault
             </a>
-            <a href="{% url 'accounts:register' %}" class="btn btn-outline-secondary btn-lg px-4">
-                <i class="bi bi-person-plus me-1"></i> Register Account
+            <a href="{% url 'accounts:register' %}" class="tv-btn tv-btn-secondary tv-btn-lg">
+                <i class="bi bi-person-plus"></i> Create Account
             </a>
         </div>
     </div>
+
+    <!-- Security Guarantees Live Console -->
     <div class="col-lg-5 mt-4 mt-lg-0">
-        <div class="card border-0 shadow-lg bg-dark text-white rounded-4 overflow-hidden">
-            <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center py-3">
-                <span class="fw-semibold text-light small"><i class="bi bi-terminal me-2 text-primary"></i>Security Guarantees</span>
-                <span class="badge bg-success-subtle text-success">Verified Active</span>
+        <div class="tv-card shadow-lg p-0 overflow-hidden" style="background-color: var(--tv-bg-surface-elevated);">
+            <div class="tv-card-header d-flex justify-content-between align-items-center py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-shield-check text-primary"></i>
+                    <span class="fw-semibold small" style="color: var(--tv-text-main);">Security Invariants</span>
+                </div>
+                <span class="tv-pill tv-pill-success">
+                    <span class="tv-pill-dot"></span> Active Defense
+                </span>
             </div>
-            <div class="card-body p-4 font-monospace small">
-                <div class="mb-2 text-success">
-                    <i class="bi bi-check-lg me-1"></i> <strong>Zero Direct Media URL Access:</strong> Protected storage root
+            <div class="tv-card-body p-4 font-monospace small">
+                <div class="d-flex align-items-center gap-2 mb-2.5 text-success">
+                    <i class="bi bi-check2-circle fs-5"></i>
+                    <span><strong>Protected Storage:</strong> Zero direct media URL exposure</span>
                 </div>
-                <div class="mb-2 text-info">
-                    <i class="bi bi-check-lg me-1"></i> <strong>Default Deny RBAC:</strong> Server-side evaluated checks
+                <div class="d-flex align-items-center gap-2 mb-2.5 text-primary">
+                    <i class="bi bi-check2-circle fs-5"></i>
+                    <span><strong>Default-Deny RBAC:</strong> Strict server-side validation</span>
                 </div>
-                <div class="mb-2 text-warning">
-                    <i class="bi bi-check-lg me-1"></i> <strong>File Signature Verification:</strong> Magic bytes validated
+                <div class="d-flex align-items-center gap-2 mb-2.5 text-warning">
+                    <i class="bi bi-check2-circle fs-5"></i>
+                    <span><strong>Binary Magic Bytes:</strong> File signature validation</span>
                 </div>
-                <div class="mb-2 text-light">
-                    <i class="bi bi-check-lg me-1"></i> <strong>Real Audit Logging:</strong> Append-only activity ledger
+                <div class="d-flex align-items-center gap-2 mb-2.5" style="color: var(--tv-text-main);">
+                    <i class="bi bi-check2-circle fs-5 text-primary"></i>
+                    <span><strong>Real Audit Trail:</strong> Immutable append-only ledger</span>
                 </div>
-                <div class="text-secondary">
-                    <i class="bi bi-check-lg me-1"></i> <strong>Instant Revocation:</strong> Immediate loss of document access
+                <div class="d-flex align-items-center gap-2 text-info">
+                    <i class="bi bi-check2-circle fs-5"></i>
+                    <span><strong>Instant Revocation:</strong> Zero cached permission drift</span>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Core Architectural Pillars -->
 <div class="row g-4 py-4 row-cols-1 row-cols-md-3">
     <div class="col">
-        <div class="card h-100 border-0 shadow-sm p-3 rounded-3">
-            <div class="card-body">
-                <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-3 mb-3 rounded-3 px-3 py-2">
-                    <i class="bi bi-people"></i>
-                </div>
-                <h4 class="card-title fw-bold">3 Explicit Roles</h4>
-                <p class="card-text text-muted">
-                    Administrators, Document Owners, and Viewers. Admins cannot view document content by default, strictly isolating operational admin from private contents.
-                </p>
+        <div class="tv-card tv-card-hover h-100 p-4">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-3 p-3 mb-3" style="background-color: var(--tv-primary-light); color: var(--tv-primary); width: 48px; height: 48px;">
+                <i class="bi bi-people-fill fs-4"></i>
             </div>
+            <h5 class="fw-bold mb-2" style="color: var(--tv-text-main);">3 Explicit Roles</h5>
+            <p class="small mb-0" style="color: var(--tv-text-secondary); line-height: 1.6;">
+                Administrators, Document Owners, and Viewers. Admins cannot download private document content by default, strictly decoupling platform management from confidential files.
+            </p>
         </div>
     </div>
+
     <div class="col">
-        <div class="card h-100 border-0 shadow-sm p-3 rounded-3">
-            <div class="card-body">
-                <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-success bg-gradient fs-3 mb-3 rounded-3 px-3 py-2">
-                    <i class="bi bi-key-fill"></i>
-                </div>
-                <h4 class="card-title fw-bold">Object-Level Permissions</h4>
-                <p class="card-text text-muted">
-                    Granular READ vs. EDIT authorization. Owners share documents with named users, and revoked permissions take effect instantaneously.
-                </p>
+        <div class="tv-card tv-card-hover h-100 p-4">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-3 p-3 mb-3" style="background-color: var(--tv-success-bg); color: var(--tv-success); width: 48px; height: 48px;">
+                <i class="bi bi-key-fill fs-4"></i>
             </div>
+            <h5 class="fw-bold mb-2" style="color: var(--tv-text-main);">Granular Access Control</h5>
+            <p class="small mb-0" style="color: var(--tv-text-secondary); line-height: 1.6;">
+                Distinct READ vs. EDIT authorization. Document owners grant and revoke permissions on specific files, with instant effect across all streaming endpoints.
+            </p>
         </div>
     </div>
+
     <div class="col">
-        <div class="card h-100 border-0 shadow-sm p-3 rounded-3">
-            <div class="card-body">
-                <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-danger bg-gradient fs-3 mb-3 rounded-3 px-3 py-2">
-                    <i class="bi bi-journal-check"></i>
-                </div>
-                <h4 class="card-title fw-bold">Real Audit Trail</h4>
-                <p class="card-text text-muted">
-                    Every upload, view, download, edit, share, revocation, and denied attempt is permanently recorded with actor, timestamp, IP, and event context.
-                </p>
+        <div class="tv-card tv-card-hover h-100 p-4">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-3 p-3 mb-3" style="background-color: var(--tv-danger-bg); color: var(--tv-danger); width: 48px; height: 48px;">
+                <i class="bi bi-journal-check fs-4"></i>
             </div>
+            <h5 class="fw-bold mb-2" style="color: var(--tv-text-main);">Tamper-Resistant Audit</h5>
+            <p class="small mb-0" style="color: var(--tv-text-secondary); line-height: 1.6;">
+                Every upload, download, permission change, and unauthorized access attempt is immutably logged with actor, timestamp, IP, User-Agent, and target snapshot.
+            </p>
         </div>
     </div>
 </div>

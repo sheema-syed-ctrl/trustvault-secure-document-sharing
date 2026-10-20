@@ -1,67 +1,71 @@
 {% extends 'base.html' %}
 
-{% block title %}Edit Document Metadata — {{ document.name }} — TrustVault{% endblock %}
+{% block title %}Edit Metadata — {{ document.name }} — TrustVault{% endblock %}
+
+{% block breadcrumbs %}
+<li><a href="{% url 'documents:list' %}">Documents</a></li>
+<li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
+<li><a href="{% url 'documents:detail' document.id %}">{{ document.name|truncatechars:20 }}</a></li>
+<li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
+<li class="tv-breadcrumb-current">Edit</li>
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center py-3">
-    <div class="col-md-8 col-lg-6">
-        <div class="d-flex align-items-center mb-3">
-            <a href="{% url 'documents:detail' document.id %}" class="btn btn-outline-secondary btn-sm me-2">
+<div class="row justify-content-center py-2">
+    <div class="col-lg-8 col-xl-7">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{% url 'documents:detail' document.id %}" class="tv-btn tv-btn-secondary tv-btn-sm me-3" title="Back to Document Details">
                 <i class="bi bi-arrow-left"></i>
             </a>
-            <h3 class="fw-bold mb-0">Edit Document Metadata</h3>
+            <div>
+                <h3 class="fw-bold mb-0" style="color: var(--tv-text-main);">Edit Document Metadata</h3>
+                <p class="small mb-0" style="color: var(--tv-text-secondary);">Update classification, title, and descriptive summary</p>
+            </div>
         </div>
 
-        <div class="card shadow-sm border-0 rounded-4">
-            <div class="card-body p-4">
-                <div class="alert alert-light border small text-muted mb-4">
-                    <i class="bi bi-info-circle me-1 text-primary"></i>
-                    <strong>Integrity Note:</strong> Under TrustVault's non-repudiation architecture, stored binary files and cryptographic hashes are immutable. You may update document titles, categories, and descriptions.
+        <div class="tv-card shadow-sm p-4">
+            <form method="post" action="{% url 'documents:edit' document.id %}" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="tv-alert tv-alert-danger mb-3 p-2.5 small">
+                        {% for error in form.non_field_errors %}
+                            <div class="d-flex align-items-center gap-1.5"><i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="tv-form-group mb-3">
+                    <label for="{{ form.name.id_for_label }}" class="tv-label">Document Title <span class="text-danger">*</span></label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="text-danger small mt-1.5 fw-medium"><i class="bi bi-x-circle me-1"></i>{{ form.name.errors.0 }}</div>
+                    {% endif %}
                 </div>
 
-                <form method="post" action="{% url 'documents:edit' document.id %}" novalidate>
-                    {% csrf_token %}
-
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger py-2 small mb-3">
-                            {% for error in form.non_field_errors %}
-                                <div><i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}</div>
-                            {% endfor %}
-                        </div>
+                <div class="tv-form-group mb-3">
+                    <label for="{{ form.category.id_for_label }}" class="tv-label">Security Classification <span class="text-danger">*</span></label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                        <div class="text-danger small mt-1.5 fw-medium"><i class="bi bi-x-circle me-1"></i>{{ form.category.errors.0 }}</div>
                     {% endif %}
+                </div>
 
-                    <div class="mb-3">
-                        <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">Document Title</label>
-                        {{ form.name }}
-                        {% if form.name.errors %}
-                            <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
-                        {% endif %}
-                    </div>
+                <div class="tv-form-group mb-4">
+                    <label for="{{ form.description.id_for_label }}" class="tv-label">Description</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div class="text-danger small mt-1.5 fw-medium"><i class="bi bi-x-circle me-1"></i>{{ form.description.errors.0 }}</div>
+                    {% endif %}
+                </div>
 
-                    <div class="mb-3">
-                        <label for="{{ form.category.id_for_label }}" class="form-label fw-semibold">Classification Category</label>
-                        {{ form.category }}
-                        {% if form.category.errors %}
-                            <div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">Description</label>
-                        {{ form.description }}
-                        {% if form.description.errors %}
-                            <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'documents:detail' document.id %}" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
-                            <i class="bi bi-check-lg me-1"></i> Save Changes
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div class="d-flex justify-content-end gap-2 pt-2 border-top" style="border-color: var(--tv-border-subtle) !important;">
+                    <a href="{% url 'documents:detail' document.id %}" class="tv-btn tv-btn-secondary">Cancel</a>
+                    <button type="submit" class="tv-btn tv-btn-primary px-4 shadow-sm fw-semibold">
+                        <i class="bi bi-check2-circle"></i> Save Changes
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

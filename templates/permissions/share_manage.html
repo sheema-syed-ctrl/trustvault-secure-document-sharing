@@ -2,114 +2,122 @@
 
 {% block title %}Share &amp; Permissions — {{ document.name }} — TrustVault{% endblock %}
 
+{% block breadcrumbs %}
+<li><a href="{% url 'documents:list' %}">Documents</a></li>
+<li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
+<li><a href="{% url 'documents:detail' document.id %}">{{ document.name|truncatechars:20 }}</a></li>
+<li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
+<li class="tv-breadcrumb-current">Sharing &amp; Access</li>
+{% endblock %}
+
 {% block content %}
+<!-- Page Header -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div class="d-flex align-items-center">
-        <a href="{% url 'documents:detail' document.id %}" class="btn btn-outline-secondary btn-sm me-3">
+        <a href="{% url 'documents:detail' document.id %}" class="tv-btn tv-btn-secondary tv-btn-sm me-3" title="Back to Document Details">
             <i class="bi bi-arrow-left"></i>
         </a>
         <div>
             <div class="d-flex align-items-center gap-2 mb-1">
-                <h2 class="fw-bold mb-0">Share &amp; Access Control</h2>
-                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
-                    {{ document.get_category_display }}
-                </span>
+                <h2 class="fw-bold mb-0" style="color: var(--tv-text-main);">Share &amp; Access Control</h2>
+                <span class="tv-pill tv-pill-primary">{{ document.get_category_display }}</span>
             </div>
-            <p class="text-muted small mb-0">
-                Document: <strong>{{ document.name }}</strong> &bull; Owned by <strong>{{ document.owner.username }}</strong>
+            <p class="small mb-0" style="color: var(--tv-text-secondary);">
+                Target Document: <strong>{{ document.name }}</strong> &bull; Owned by <strong>{{ document.owner.username }}</strong>
             </p>
         </div>
     </div>
     <div class="d-flex gap-2">
-        <a href="{% url 'documents:detail' document.id %}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-file-earmark-text me-1"></i> Document Details
+        <a href="{% url 'documents:detail' document.id %}" class="tv-btn tv-btn-secondary tv-btn-sm">
+            <i class="bi bi-file-earmark-text"></i> Details
         </a>
-        <a href="{% url 'documents:download' document.id %}" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-download me-1"></i> Download
+        <a href="{% url 'documents:download' document.id %}" class="tv-btn tv-btn-primary tv-btn-sm">
+            <i class="bi bi-download"></i> Download
         </a>
     </div>
 </div>
 
 <div class="row g-4">
-    <!-- Grant Permission Card -->
+    <!-- Left Column: Grant Form & Directory -->
     <div class="col-lg-5">
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-header bg-white border-bottom py-3">
-                <h6 class="fw-bold mb-0 text-uppercase small text-primary">
-                    <i class="bi bi-person-plus-fill me-2"></i>Grant Access to a User
+        <!-- Grant Access Card -->
+        <div class="tv-card mb-4">
+            <div class="tv-card-header">
+                <h6 class="fw-bold mb-0 small text-uppercase" style="color: var(--tv-primary);">
+                    <i class="bi bi-person-plus-fill me-1.5"></i> Grant Access to a User
                 </h6>
             </div>
-            <div class="card-body p-4">
+            <div class="tv-card-body p-4">
                 <form method="post" action="{% url 'permissions:manage' document.id %}" novalidate>
                     {% csrf_token %}
 
                     {% if form.non_field_errors %}
-                        <div class="alert alert-danger small py-2 mb-3">
+                        <div class="tv-alert tv-alert-danger mb-3 p-2.5 small">
                             {% for error in form.non_field_errors %}
-                                <div><i class="bi bi-exclamation-circle-fill me-1"></i>{{ error }}</div>
+                                <div class="d-flex align-items-center gap-1.5"><i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}</div>
                             {% endfor %}
                         </div>
                     {% endif %}
 
                     <!-- Recipient Selection -->
-                    <div class="mb-3">
-                        <label for="{{ form.recipient_username.id_for_label }}" class="form-label fw-semibold small text-uppercase">
+                    <div class="tv-form-group mb-3">
+                        <label for="{{ form.recipient_username.id_for_label }}" class="tv-label">
                             Recipient Username <span class="text-danger">*</span>
                         </label>
                         {{ form.recipient_username }}
                         {% if form.recipient_username.errors %}
-                            <div class="text-danger small mt-1">
+                            <div class="text-danger small mt-1.5 fw-medium">
                                 {% for error in form.recipient_username.errors %}{{ error }}{% endfor %}
                             </div>
                         {% endif %}
-                        <div class="form-text small">{{ form.recipient_username.help_text }}</div>
+                        <div class="form-text small" style="color: var(--tv-text-muted);">{{ form.recipient_username.help_text }}</div>
                     </div>
 
                     <!-- Permission Type Selection -->
-                    <div class="mb-4">
-                        <label for="{{ form.permission_type.id_for_label }}" class="form-label fw-semibold small text-uppercase">
+                    <div class="tv-form-group mb-4">
+                        <label for="{{ form.permission_type.id_for_label }}" class="tv-label">
                             Permission Level <span class="text-danger">*</span>
                         </label>
                         {{ form.permission_type }}
                         {% if form.permission_type.errors %}
-                            <div class="text-danger small mt-1">
+                            <div class="text-danger small mt-1.5 fw-medium">
                                 {% for error in form.permission_type.errors %}{{ error }}{% endfor %}
                             </div>
                         {% endif %}
                         <div class="form-text small mt-2">
-                            <ul class="list-unstyled mb-0 small text-muted">
-                                <li><i class="bi bi-eye text-info me-1"></i><strong>READ:</strong> Can view metadata and securely download the file.</li>
-                                <li><i class="bi bi-pencil text-warning me-1"></i><strong>EDIT:</strong> Can view, download, and edit document metadata (cannot delete or share).</li>
+                            <ul class="list-unstyled mb-0 d-flex flex-column gap-1" style="color: var(--tv-text-muted);">
+                                <li><i class="bi bi-eye text-info me-1"></i><strong>READ:</strong> Metadata inspection &amp; secure file streaming.</li>
+                                <li><i class="bi bi-pencil text-warning me-1"></i><strong>EDIT:</strong> Metadata update rights (cannot delete or re-share).</li>
                             </ul>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 py-2">
-                        <i class="bi bi-shield-check me-1"></i> Grant Access
+                    <button type="submit" class="tv-btn tv-btn-primary w-100 py-2.5 shadow-sm fw-semibold">
+                        <i class="bi bi-shield-check"></i> Authorize &amp; Grant Access
                     </button>
                 </form>
             </div>
         </div>
 
         <!-- Eligible Users Directory Card -->
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold mb-0 text-uppercase small text-secondary">
-                    <i class="bi bi-people-fill me-2"></i>Eligible Registered Users
+        <div class="tv-card">
+            <div class="tv-card-header d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 small text-uppercase" style="color: var(--tv-text-muted);">
+                    <i class="bi bi-people-fill text-primary me-1.5"></i> Eligible Users
                 </h6>
-                <span class="badge bg-light text-muted border small">{{ shareable_users|length }} available</span>
+                <span class="tv-pill tv-pill-primary">{{ shareable_users|length }} available</span>
             </div>
-            <div class="card-body p-3">
+            <div class="tv-card-body p-3">
                 <!-- Search Filter Form -->
                 <form method="get" class="mb-3">
                     <div class="input-group input-group-sm">
-                        <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by username..." autocomplete="off">
+                        <input type="text" name="q" value="{{ search_query }}" class="tv-input" placeholder="Search by username..." autocomplete="off">
                         {% if search_query %}
-                            <a href="{% url 'permissions:manage' document.id %}" class="btn btn-outline-secondary" title="Clear search">
+                            <a href="{% url 'permissions:manage' document.id %}" class="tv-btn tv-btn-secondary tv-btn-sm" title="Clear search">
                                 <i class="bi bi-x"></i>
                             </a>
                         {% endif %}
-                        <button type="submit" class="btn btn-outline-primary">
+                        <button type="submit" class="tv-btn tv-btn-secondary tv-btn-sm">
                             <i class="bi bi-search"></i>
                         </button>
                     </div>
@@ -118,12 +126,12 @@
                 {% if shareable_users %}
                     <div class="list-group list-group-flush small" style="max-height: 240px; overflow-y: auto;">
                         {% for u in shareable_users %}
-                            <div class="list-group-item px-2 py-2 d-flex justify-content-between align-items-center">
+                            <div class="list-group-item px-2 py-2 d-flex justify-content-between align-items-center" style="background-color: transparent; border-color: var(--tv-border-subtle) !important;">
                                 <div>
-                                    <span class="fw-semibold text-dark">{{ u.username }}</span>
-                                    <span class="badge bg-secondary-subtle text-secondary border ms-1">{{ u.get_role_display }}</span>
+                                    <span class="fw-semibold" style="color: var(--tv-text-main);">{{ u.username }}</span>
+                                    <span class="tv-pill tv-pill-primary ms-1" style="font-size: 10px;">{{ u.get_role_display }}</span>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" onclick="selectRecipient('{{ u.username }}')" title="Select {{ u.username }}">
+                                <button type="button" class="tv-btn tv-btn-secondary tv-btn-sm py-0.5 px-2" onclick="selectRecipient('{{ u.username }}')" title="Select {{ u.username }}">
                                     Select
                                 </button>
                             </div>
@@ -139,118 +147,123 @@
         </div>
     </div>
 
-    <!-- Active Permissions Table Card -->
+    <!-- Right Column: Active Permissions Table Card -->
     <div class="col-lg-7">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold mb-0 text-uppercase small text-secondary">
-                    <i class="bi bi-shield-lock-fill me-2"></i>Active Document Permissions
+        <div class="tv-card">
+            <div class="tv-card-header d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 small text-uppercase" style="color: var(--tv-text-main);">
+                    <i class="bi bi-shield-lock-fill text-primary me-1.5"></i> Active Access Grants
                 </h6>
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                <span class="tv-pill tv-pill-success">
                     {{ permissions|length }} active {% if permissions|length == 1 %}grant{% else %}grants{% endif %}
                 </span>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light small text-uppercase">
+            <div class="table-responsive">
+                <table class="tv-table">
+                    <thead>
+                        <tr>
+                            <th>Recipient</th>
+                            <th>Access Level</th>
+                            <th>Granted</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for perm in permissions %}
                             <tr>
-                                <th class="ps-4">Recipient</th>
-                                <th>Access Level</th>
-                                <th>Granted</th>
-                                <th class="text-end pe-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="small">
-                            {% for perm in permissions %}
-                                <tr>
-                                    <td class="ps-4">
-                                        <div class="fw-semibold text-dark">{{ perm.user.username }}</div>
-                                        <div class="text-muted small">
-                                            ID: {{ perm.user.id }} &bull; Role: {{ perm.user.get_role_display }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        {% if perm.permission_type == 'EDIT' %}
-                                            <span class="badge bg-warning text-dark border border-warning-subtle">
-                                                <i class="bi bi-pencil-fill me-1"></i>EDIT
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-info text-dark border border-info-subtle">
-                                                <i class="bi bi-eye-fill me-1"></i>READ
-                                            </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="text-muted">{{ perm.created_at|date:"M d, Y" }}</span>
-                                        {% if perm.granted_by %}
-                                            <div class="text-muted small fst-italic">by {{ perm.granted_by.username }}</div>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-end pe-4">
-                                        <div class="d-inline-flex gap-1 align-items-center">
-                                            <!-- Update Permission Form -->
-                                            <form method="post" action="{% url 'permissions:update' document.id perm.id %}" class="d-inline">
-                                                {% csrf_token %}
-                                                {% if perm.permission_type == 'READ' %}
-                                                    <input type="hidden" name="permission_type" value="EDIT">
-                                                    <button type="submit" class="btn btn-outline-warning btn-sm py-1 px-2" title="Upgrade to EDIT permission">
-                                                        <i class="bi bi-arrow-up-circle me-1"></i> Make EDIT
-                                                    </button>
-                                                {% else %}
-                                                    <input type="hidden" name="permission_type" value="READ">
-                                                    <button type="submit" class="btn btn-outline-info btn-sm py-1 px-2 text-dark" title="Downgrade to READ permission">
-                                                        <i class="bi bi-arrow-down-circle me-1"></i> Make READ
-                                                    </button>
-                                                {% endif %}
-                                            </form>
+                                <td>
+                                    <div class="fw-semibold" style="color: var(--tv-text-main);">{{ perm.user.username }}</div>
+                                    <div class="small" style="color: var(--tv-text-muted);">
+                                        ID: {{ perm.user.id }} &bull; Role: {{ perm.user.get_role_display }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if perm.permission_type == 'EDIT' %}
+                                        <span class="tv-pill tv-pill-warning">
+                                            <i class="bi bi-pencil-fill me-1"></i> EDIT
+                                        </span>
+                                    {% else %}
+                                        <span class="tv-pill tv-pill-info">
+                                            <i class="bi bi-eye-fill me-1"></i> READ
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span style="color: var(--tv-text-main);">{{ perm.created_at|date:"M d, Y" }}</span>
+                                    {% if perm.granted_by %}
+                                        <div class="small fst-italic" style="color: var(--tv-text-muted);">by {{ perm.granted_by.username }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-1.5 align-items-center">
+                                        <!-- Update Permission Form -->
+                                        <form method="post" action="{% url 'permissions:update' document.id perm.id %}" class="d-inline m-0">
+                                            {% csrf_token %}
+                                            {% if perm.permission_type == 'READ' %}
+                                                <input type="hidden" name="permission_type" value="EDIT">
+                                                <button type="submit" class="tv-btn tv-btn-secondary tv-btn-sm" title="Upgrade to EDIT permission">
+                                                    <i class="bi bi-arrow-up-circle text-warning"></i> To EDIT
+                                                </button>
+                                            {% else %}
+                                                <input type="hidden" name="permission_type" value="READ">
+                                                <button type="submit" class="tv-btn tv-btn-secondary tv-btn-sm" title="Downgrade to READ permission">
+                                                    <i class="bi bi-arrow-down-circle text-info"></i> To READ
+                                                </button>
+                                            {% endif %}
+                                        </form>
 
-                                            <!-- Revoke Button Trigger Modal -->
-                                            <button type="button" class="btn btn-outline-danger btn-sm py-1 px-2" data-bs-toggle="modal" data-bs-target="#revokeModal{{ perm.id }}" title="Revoke access">
-                                                <i class="bi bi-x-circle me-1"></i> Revoke
-                                            </button>
-                                        </div>
+                                        <!-- Revoke Button Trigger Modal -->
+                                        <button type="button" class="tv-btn tv-btn-outline-danger tv-btn-sm" data-bs-toggle="modal" data-bs-target="#revokeModal{{ perm.id }}" title="Revoke access">
+                                            <i class="bi bi-x-circle"></i> Revoke
+                                        </button>
+                                    </div>
 
-                                        <!-- Revocation Confirmation Modal -->
-                                        <div class="modal fade" id="revokeModal{{ perm.id }}" tabindex="-1" aria-labelledby="revokeModalLabel{{ perm.id }}" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered text-start">
-                                                <div class="modal-content border-0 shadow">
-                                                    <div class="modal-header bg-danger text-white">
-                                                        <h5 class="modal-title" id="revokeModalLabel{{ perm.id }}">
-                                                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Access Revocation
-                                                        </h5>
-                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p>Are you sure you want to revoke <strong>{{ perm.get_permission_type_display }}</strong> access for <strong>{{ perm.user.username }}</strong>?</p>
-                                                        <div class="alert alert-warning small mb-0">
-                                                            <i class="bi bi-info-circle me-1"></i> The user will immediately lose authorization to view, download, or edit this document.
+                                    <!-- Revocation Confirmation Modal -->
+                                    <div class="modal fade" id="revokeModal{{ perm.id }}" tabindex="-1" aria-labelledby="revokeModalLabel{{ perm.id }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered text-start">
+                                            <div class="modal-content tv-card border shadow-lg" style="background-color: var(--tv-bg-surface);">
+                                                <div class="modal-header border-bottom" style="border-color: var(--tv-border-default) !important;">
+                                                    <h5 class="modal-title fw-bold text-danger" id="revokeModalLabel{{ perm.id }}">
+                                                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Confirm Access Revocation
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body py-4">
+                                                    <p class="mb-2" style="color: var(--tv-text-main);">
+                                                        Are you sure you want to revoke <strong>{{ perm.get_permission_type_display }}</strong> access for <strong>{{ perm.user.username }}</strong>?
+                                                    </p>
+                                                    <div class="tv-alert tv-alert-warning mb-0 small">
+                                                        <i class="bi bi-info-circle-fill fs-5 text-warning flex-shrink-0"></i>
+                                                        <div>
+                                                            <strong>Instant Enforcement:</strong> The user will immediately lose authorization to view, download, or edit this document across all platform interfaces.
                                                         </div>
                                                     </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                                                        <form method="post" action="{% url 'permissions:revoke' document.id perm.id %}">
-                                                            {% csrf_token %}
-                                                            <button type="submit" class="btn btn-danger btn-sm">Confirm Revocation</button>
-                                                        </form>
-                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-top" style="border-color: var(--tv-border-default) !important;">
+                                                    <button type="button" class="tv-btn tv-btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <form method="post" action="{% url 'permissions:revoke' document.id perm.id %}" class="m-0">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="tv-btn tv-btn-danger">
+                                                            <i class="bi bi-person-x-fill me-1"></i> Confirm Revocation
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </div>
                                         </div>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="4" class="text-center py-5">
-                                        <div class="text-muted mb-2"><i class="bi bi-shield-slash display-6"></i></div>
-                                        <h6 class="fw-semibold">No active permissions</h6>
-                                        <p class="text-muted small mb-0">This document is private. Grant READ or EDIT access using the form on the left.</p>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5">
+                                    <div class="text-muted mb-2"><i class="bi bi-shield-slash display-6"></i></div>
+                                    <h6 class="fw-semibold" style="color: var(--tv-text-main);">No active permissions</h6>
+                                    <p class="small mb-0" style="color: var(--tv-text-muted);">This document is currently private to the owner. Grant READ or EDIT access using the form on the left.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -258,7 +271,7 @@
 
 <script>
 function selectRecipient(username) {
-    const input = document.getElementById('recipientUsernameInput');
+    const input = document.getElementById('id_recipient_username') || document.getElementById('recipientUsernameInput') || document.querySelector('input[name="recipient_username"]');
     if (input) {
         input.value = username;
         input.focus();

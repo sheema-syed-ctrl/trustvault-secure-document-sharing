@@ -1,110 +1,130 @@
 {% extends 'base.html' %}
 
-{% block title %}Upload Confidential Document — TrustVault{% endblock %}
+{% block title %}Upload Document — TrustVault{% endblock %}
+
+{% block breadcrumbs %}
+<li><a href="{% url 'documents:list' %}">Documents</a></li>
+<li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
+<li class="tv-breadcrumb-current">Upload</li>
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center py-3">
-    <div class="col-lg-8">
-        <div class="d-flex align-items-center mb-3">
-            <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary btn-sm me-2">
+<div class="row justify-content-center py-2">
+    <div class="col-lg-10 col-xl-9">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{% url 'documents:list' %}" class="tv-btn tv-btn-secondary tv-btn-sm me-3" title="Back to Document List">
                 <i class="bi bi-arrow-left"></i>
             </a>
-            <h3 class="fw-bold mb-0">Upload Confidential Document</h3>
+            <div>
+                <h3 class="fw-bold mb-0" style="color: var(--tv-text-main);">Upload Confidential Document</h3>
+                <p class="small mb-0" style="color: var(--tv-text-secondary);">Direct-to-protected storage with cryptographic binary validation</p>
+            </div>
         </div>
 
         <div class="row g-4">
-            <div class="col-md-7">
-                <div class="card shadow-sm border-0 rounded-4">
-                    <div class="card-body p-4">
-                        <form method="post" action="{% url 'documents:upload' %}" enctype="multipart/form-data" novalidate>
-                            {% csrf_token %}
+            <div class="col-lg-7">
+                <div class="tv-card shadow-sm p-4">
+                    <form method="post" action="{% url 'documents:upload' %}" enctype="multipart/form-data" novalidate id="tvUploadForm">
+                        {% csrf_token %}
 
-                            {% if form.non_field_errors %}
-                                <div class="alert alert-danger py-2 small mb-3">
-                                    {% for error in form.non_field_errors %}
-                                        <div><i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}</div>
-                                    {% endfor %}
+                        {% if form.non_field_errors %}
+                            <div class="tv-alert tv-alert-danger mb-3 p-2.5 small">
+                                {% for error in form.non_field_errors %}
+                                    <div class="d-flex align-items-center gap-1.5"><i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="tv-form-group mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="tv-label">Document Title <span class="text-danger">*</span></label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small mt-1.5 fw-medium"><i class="bi bi-x-circle me-1"></i>{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="tv-form-group mb-3">
+                            <label for="{{ form.category.id_for_label }}" class="tv-label">Security Classification <span class="text-danger">*</span></label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                                <div class="text-danger small mt-1.5 fw-medium"><i class="bi bi-x-circle me-1"></i>{{ form.category.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="tv-form-group mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="tv-label">Description (Optional)</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small mt-1.5 fw-medium"><i class="bi bi-x-circle me-1"></i>{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Drag and Drop Upload Area -->
+                        <div class="tv-form-group mb-4">
+                            <label class="tv-label">Document Binary <span class="text-danger">*</span></label>
+                            <div class="tv-dropzone" id="tvDropzone">
+                                <div class="tv-dropzone-icon">
+                                    <i class="bi bi-cloud-arrow-up-fill"></i>
+                                </div>
+                                <div class="tv-dropzone-title">Drag &amp; drop file here, or click to browse</div>
+                                <div class="tv-dropzone-desc">Supported: PDF, DOCX, XLSX, TXT, PNG, JPG (Max 25 MB)</div>
+                                {{ form.file }}
+                            </div>
+                            {% if form.file.errors %}
+                                <div class="text-danger small mt-2 fw-medium">
+                                    <i class="bi bi-shield-x me-1"></i> {{ form.file.errors.0 }}
                                 </div>
                             {% endif %}
+                        </div>
 
-                            <div class="mb-3">
-                                <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">Document Title</label>
-                                {{ form.name }}
-                                {% if form.name.errors %}
-                                    <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="{{ form.category.id_for_label }}" class="form-label fw-semibold">Classification Category</label>
-                                {{ form.category }}
-                                {% if form.category.errors %}
-                                    <div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">Description (Optional)</label>
-                                {{ form.description }}
-                                {% if form.description.errors %}
-                                    <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="{{ form.file.id_for_label }}" class="form-label fw-semibold">Select File</label>
-                                {{ form.file }}
-                                <div class="form-text small">
-                                    {{ form.file.help_text }}
-                                </div>
-                                {% if form.file.errors %}
-                                    <div class="text-danger small mt-1 fw-semibold">
-                                        <i class="bi bi-shield-x me-1"></i> {{ form.file.errors.0 }}
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                            <div class="d-flex justify-content-end gap-2">
-                                <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary">Cancel</a>
-                                <button type="submit" class="btn btn-primary px-4 shadow-sm">
-                                    <i class="bi bi-cloud-arrow-up-fill me-1"></i> Secure Upload
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                        <div class="d-flex justify-content-end gap-2 pt-2 border-top" style="border-color: var(--tv-border-subtle) !important;">
+                            <a href="{% url 'documents:list' %}" class="tv-btn tv-btn-secondary">Cancel</a>
+                            <button type="submit" class="tv-btn tv-btn-primary px-4 shadow-sm fw-semibold">
+                                <i class="bi bi-shield-lock-fill"></i> Execute Secure Upload
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
             <!-- Upload Security Guarantees Sidebar -->
-            <div class="col-md-5">
-                <div class="card border-0 shadow-sm rounded-4 bg-light mb-3">
-                    <div class="card-body p-4">
-                        <h6 class="fw-bold text-uppercase text-secondary mb-3 small">
-                            <i class="bi bi-shield-check text-primary me-1"></i> Storage &amp; Validation Policy
-                        </h6>
-                        <ul class="list-unstyled small mb-0 text-muted">
-                            <li class="mb-2">
-                                <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                <strong>File Signature Verification:</strong> Binary magic bytes are inspected to prevent extension spoofing.
-                            </li>
-                            <li class="mb-2">
-                                <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                <strong>Private Storage Root:</strong> Documents are stored strictly outside public web roots.
-                            </li>
-                            <li class="mb-2">
-                                <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                <strong>Random Storage UUIDs:</strong> Protects against path traversal and file collisions.
-                            </li>
-                            <li class="mb-2">
-                                <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                <strong>Cryptographic SHA-256:</strong> Verifies file integrity across lifecycle.
-                            </li>
-                            <li>
-                                <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                <strong>Strict Size Cap:</strong> Maximum file size enforced at 25 MB.
-                            </li>
-                        </ul>
-                    </div>
+            <div class="col-lg-5">
+                <div class="tv-card p-4 mb-3" style="background-color: var(--tv-bg-subtle);">
+                    <h6 class="fw-bold mb-3 small text-uppercase" style="color: var(--tv-text-main);">
+                        <i class="bi bi-shield-check text-primary me-1"></i> Storage &amp; Validation Invariants
+                    </h6>
+                    <ul class="list-unstyled small mb-0 d-flex flex-column gap-3" style="color: var(--tv-text-secondary);">
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success mt-0.5"></i>
+                            <div>
+                                <strong style="color: var(--tv-text-main);">Magic Byte Signature:</strong> Validates file headers to block extension spoofing and polyglot attacks.
+                            </div>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success mt-0.5"></i>
+                            <div>
+                                <strong style="color: var(--tv-text-main);">Isolated Storage Root:</strong> Physical files reside strictly outside public web server roots.
+                            </div>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success mt-0.5"></i>
+                            <div>
+                                <strong style="color: var(--tv-text-main);">UUID Obfuscation:</strong> Stored under random UUID tokens to eliminate path traversal risks.
+                            </div>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success mt-0.5"></i>
+                            <div>
+                                <strong style="color: var(--tv-text-main);">Cryptographic SHA-256:</strong> Calculates integrity hash on ingestion for lifetime tamper detection.
+                            </div>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success mt-0.5"></i>
+                            <div>
+                                <strong style="color: var(--tv-text-main);">25 MB Enforcement:</strong> Hard quota enforced both client-side and server-side.
+                            </div>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>

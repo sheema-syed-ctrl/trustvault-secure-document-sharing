@@ -1,287 +1,226 @@
 {% extends 'base.html' %}
 
-{% block title %}Administrator Dashboard — TrustVault{% endblock %}
+{% block title %}Administrator Control Center — TrustVault{% endblock %}
+
+{% block breadcrumbs %}
+<li class="tv-breadcrumb-current">Admin Console</li>
+{% endblock %}
 
 {% block content %}
+<!-- Page Header -->
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <div>
-        <h2 class="fw-bold mb-1">
+        <h2 class="fw-bold mb-1" style="color: var(--tv-text-main);">
             <i class="bi bi-shield-shaded text-danger me-2"></i> Administrator Control Panel
         </h2>
-        <p class="text-muted small mb-0">System Governance, Platform Health, User Directory &amp; Security Oversight</p>
+        <p class="small mb-0" style="color: var(--tv-text-secondary);">Enterprise security monitoring, platform telemetry, and immutable audit inspection</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-people-fill me-1"></i> User Directory
+        <a href="{% url 'accounts:user_list' %}" class="tv-btn tv-btn-secondary tv-btn-sm">
+            <i class="bi bi-people-fill"></i> User Directory
         </a>
-        <a href="{% url 'accounts:user_create' %}" class="btn btn-primary btn-sm">
-            <i class="bi bi-person-plus-fill me-1"></i> Add User
+        <a href="{% url 'accounts:user_create' %}" class="tv-btn tv-btn-primary tv-btn-sm">
+            <i class="bi bi-person-plus-fill"></i> Add User
         </a>
-        <a href="{% url 'audit:trail' %}" class="btn btn-outline-danger btn-sm">
-            <i class="bi bi-journal-text me-1"></i> Full Audit Trail
+        <a href="{% url 'audit:trail' %}" class="tv-btn tv-btn-outline-danger tv-btn-sm">
+            <i class="bi bi-journal-text"></i> Audit Trail
         </a>
-        <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-folder2-open me-1"></i> Document Index
+        <a href="{% url 'documents:list' %}" class="tv-btn tv-btn-secondary tv-btn-sm">
+            <i class="bi bi-folder2-open"></i> Document Index
         </a>
     </div>
 </div>
 
-<div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4">
-    <i class="bi bi-shield-lock-fill fs-4 me-3 text-primary"></i>
+<!-- Trust Boundary Banner -->
+<div class="tv-alert tv-alert-info mb-4 shadow-xs">
+    <i class="bi bi-shield-lock-fill fs-4 text-primary flex-shrink-0"></i>
     <div class="small">
-        <strong>Trust Boundary Notice:</strong> As a Platform Administrator, you govern accounts, monitor system health, and inspect audit trails.
-        Under the principle of least privilege, administrative status does not grant document content viewing or file download access.
+        <strong style="color: var(--tv-text-main);">Trust Boundary Notice:</strong> Platform Administrators oversee user lifecycle, monitor activity telemetry, and review audit logs. By security invariant, administrative privileges strictly exclude raw file content downloads.
     </div>
 </div>
 
-<!-- Primary Platform Health Metrics -->
+<!-- Primary Platform Metrics -->
 <div class="row g-3 mb-4">
     <div class="col-lg-3 col-md-6">
-        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Total Users</div>
-                    <div class="fs-3 fw-bold text-dark">{{ total_users }}</div>
-                    <div class="small text-muted mt-1">
-                        <span class="badge bg-success-subtle text-success">{{ active_users }} Active</span>
-                        {% if inactive_users %}
-                            <span class="badge bg-secondary-subtle text-secondary">{{ inactive_users }} Inactive</span>
-                        {% endif %}
-                    </div>
+        <div class="tv-stat-card">
+            <div class="tv-stat-header">
+                <span class="tv-stat-label">Total Accounts</span>
+                <div class="tv-stat-icon" style="background-color: var(--tv-primary-light); color: var(--tv-primary);">
+                    <i class="bi bi-people-fill"></i>
                 </div>
-                <div class="bg-primary-subtle text-primary rounded-circle p-3">
-                    <i class="bi bi-people-fill fs-4"></i>
-                </div>
+            </div>
+            <div class="tv-stat-value">{{ total_users }}</div>
+            <div class="tv-stat-subtext d-flex align-items-center gap-1.5">
+                <span class="tv-pill tv-pill-success py-0 px-2" style="font-size: 11px;">{{ active_users }} Active</span>
+                {% if inactive_users %}
+                    <span class="tv-pill tv-pill-danger py-0 px-2" style="font-size: 11px;">{{ inactive_users }} Inactive</span>
+                {% endif %}
             </div>
         </div>
     </div>
+
     <div class="col-lg-3 col-md-6">
-        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Registered Documents</div>
-                    <div class="fs-3 fw-bold text-dark">{{ total_documents }}</div>
-                    <div class="small text-muted mt-1">Platform-wide vaults</div>
-                </div>
-                <div class="bg-secondary-subtle text-secondary rounded-circle p-3">
-                    <i class="bi bi-file-earmark-lock2-fill fs-4"></i>
+        <div class="tv-stat-card">
+            <div class="tv-stat-header">
+                <span class="tv-stat-label">Vault Documents</span>
+                <div class="tv-stat-icon" style="background-color: var(--tv-bg-subtle); color: var(--tv-text-secondary);">
+                    <i class="bi bi-file-earmark-lock2-fill"></i>
                 </div>
             </div>
+            <div class="tv-stat-value">{{ total_documents }}</div>
+            <div class="tv-stat-subtext">Isolated in protected media</div>
         </div>
     </div>
+
     <div class="col-lg-3 col-md-6">
-        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Active Permissions</div>
-                    <div class="fs-3 fw-bold text-info">{{ total_permissions }}</div>
-                    <div class="small text-muted mt-1">Cross-user sharing grants</div>
-                </div>
-                <div class="bg-info-subtle text-info rounded-circle p-3">
-                    <i class="bi bi-key-fill fs-4"></i>
+        <div class="tv-stat-card">
+            <div class="tv-stat-header">
+                <span class="tv-stat-label">Active Permissions</span>
+                <div class="tv-stat-icon" style="background-color: var(--tv-info-bg); color: var(--tv-info);">
+                    <i class="bi bi-key-fill"></i>
                 </div>
             </div>
+            <div class="tv-stat-value" style="color: var(--tv-info);">{{ total_permissions }}</div>
+            <div class="tv-stat-subtext">Cross-user object grants</div>
         </div>
     </div>
+
     <div class="col-lg-3 col-md-6">
-        <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Security Denials</div>
-                    <div class="fs-3 fw-bold {% if security_denial_count > 0 %}text-danger{% else %}text-success{% endif %}">
-                        {{ security_denial_count }}
-                    </div>
-                    <div class="small text-muted mt-1">Unauthorized attempts</div>
-                </div>
-                <div class="{% if security_denial_count > 0 %}bg-danger-subtle text-danger{% else %}bg-success-subtle text-success{% endif %} rounded-circle p-3">
-                    <i class="bi bi-shield-exclamation fs-4"></i>
+        <div class="tv-stat-card">
+            <div class="tv-stat-header">
+                <span class="tv-stat-label">Security Traps</span>
+                <div class="tv-stat-icon" style="background-color: {% if security_denial_count > 0 %}var(--tv-danger-bg){% else %}var(--tv-success-bg){% endif %}; color: {% if security_denial_count > 0 %}var(--tv-danger){% else %}var(--tv-success){% endif %};">
+                    <i class="bi bi-shield-exclamation"></i>
                 </div>
             </div>
+            <div class="tv-stat-value" style="color: {% if security_denial_count > 0 %}var(--tv-danger){% else %}var(--tv-success){% endif %};">
+                {{ security_denial_count }}
+            </div>
+            <div class="tv-stat-subtext">Denied unauthorized requests</div>
         </div>
     </div>
 </div>
 
-<!-- Secondary Role Distribution Row -->
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-3 p-3 bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Administrators</div>
-                    <div class="fs-4 fw-bold text-danger">{{ admin_count }}</div>
-                </div>
-                <i class="bi bi-shield-fill-check fs-2 text-danger opacity-50"></i>
+<!-- Secondary Grid: Role Distribution & Recent Denials -->
+<div class="row g-4 mb-4">
+    <div class="{% if recent_security_denials %}col-lg-5{% else %}col-12{% endif %}">
+        <div class="tv-card h-100">
+            <div class="tv-card-header">
+                <h6 class="fw-bold mb-0" style="color: var(--tv-text-main);">
+                    <i class="bi bi-pie-chart-fill text-primary me-2"></i> Account Role Distribution
+                </h6>
             </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-3 p-3 bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Document Owners</div>
-                    <div class="fs-4 fw-bold text-primary">{{ owner_count }}</div>
-                </div>
-                <i class="bi bi-person-badge fs-2 text-primary opacity-50"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-3 p-3 bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="text-muted small text-uppercase fw-semibold">Viewers</div>
-                    <div class="fs-4 fw-bold text-info">{{ viewer_count }}</div>
-                </div>
-                <i class="bi bi-eye fs-2 text-info opacity-50"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% if recent_security_denials %}
-    <!-- Security Denial Alert Banner -->
-    <div class="card border-danger shadow-sm rounded-3 mb-4">
-        <div class="card-header bg-danger text-white py-3 d-flex justify-content-between align-items-center">
-            <h5 class="fw-bold mb-0">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i> Recent Security Access Denials
-            </h5>
-            <a href="{% url 'audit:trail' %}?event_type=SECURITY_ACCESS_DENIED" class="btn btn-sm btn-light">View All Denials &rarr;</a>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-4">Timestamp</th>
-                        <th>Actor</th>
-                        <th>Attempted Document</th>
-                        <th>Client IP</th>
-                        <th>Details</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for event in recent_security_denials %}
-                        <tr>
-                            <td class="ps-4 small text-muted">{{ event.timestamp|date:"M d, Y H:i:s" }}</td>
-                            <td class="fw-semibold text-danger">{{ event.actor_username }}</td>
-                            <td>{{ event.target_document_name_snapshot|default:"—" }}</td>
-                            <td class="small font-monospace">{{ event.ip_address|default:"—" }}</td>
-                            <td class="small text-muted">{{ event.metadata.reason|default:"Access Denied" }}</td>
-                        </tr>
+            <div class="tv-card-body">
+                <div class="d-flex flex-column gap-3">
+                    {% for item in role_distribution %}
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-1 small">
+                                <span class="fw-semibold" style="color: var(--tv-text-main);">{{ item.label }}</span>
+                                <span class="text-muted">{{ item.count }} user{{ item.count|pluralize }} ({{ item.pct }}%)</span>
+                            </div>
+                            <div class="progress" style="height: 6px; background-color: var(--tv-bg-subtle);">
+                                <div class="progress-bar {% if item.role == 'ADMIN' %}bg-danger{% elif item.role == 'OWNER' %}bg-primary{% else %}bg-info{% endif %}" role="progressbar" style="width: {{ item.pct }}%;" aria-valuenow="{{ item.pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
                     {% endfor %}
-                </tbody>
-            </table>
+                </div>
+            </div>
         </div>
     </div>
-{% endif %}
 
-<!-- Platform Recent Activity Feed -->
-<div class="card border-0 shadow-sm rounded-3 mb-4">
-    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0">
-            <i class="bi bi-activity me-2 text-primary"></i> Recent Platform Activity Feed
-        </h5>
-        <a href="{% url 'audit:trail' %}" class="small text-decoration-none">View Complete Audit Trail &rarr;</a>
+    {% if recent_security_denials %}
+    <!-- Security Alerts / Trapped Denials -->
+    <div class="col-lg-7">
+        <div class="tv-card h-100">
+            <div class="tv-card-header d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-danger">
+                    <i class="bi bi-shield-slash-fill me-2"></i> Recent Security Access Denials
+                </h6>
+                <a href="{% url 'audit:trail' %}?event_type=SECURITY_ACCESS_DENIED" class="tv-btn tv-btn-outline-danger tv-btn-sm">View All Denials &rarr;</a>
+            </div>
+            <div class="tv-card-body p-0">
+                <div class="table-responsive">
+                    <table class="tv-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Actor</th>
+                                <th>Target Entity</th>
+                                <th>Client IP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for denial in recent_security_denials %}
+                                <tr>
+                                    <td><span class="tv-code-pill">{{ denial.timestamp|date:"Y-m-d H:i:s" }}</span></td>
+                                    <td><span class="fw-semibold text-danger">{{ denial.actor_username }}</span></td>
+                                    <td>{{ denial.target_document_name_snapshot|default:"Protected Route" }}</td>
+                                    <td><span class="tv-code-pill">{{ denial.ip_address }}</span></td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted small">
+                                        <i class="bi bi-shield-check text-success fs-5 d-block mb-1"></i>
+                                        Zero trapped security violations in audit scope.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th class="ps-4">Timestamp</th>
-                    <th>Event Type</th>
-                    <th>Actor</th>
-                    <th>Target Document / Subject</th>
-                    <th>Client IP</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for event in recent_activity %}
-                    <tr>
-                        <td class="ps-4 small text-muted">{{ event.timestamp|date:"M d, Y H:i" }}</td>
-                        <td>
-                            <span class="badge {% if 'DENIED' in event.event_type %}bg-danger{% elif 'UPLOAD' in event.event_type %}bg-primary{% elif 'DOWNLOAD' in event.event_type %}bg-success{% elif 'GRANT' in event.event_type %}bg-info text-dark{% elif 'REVOKE' in event.event_type %}bg-warning text-dark{% elif 'DELETE' in event.event_type %}bg-danger{% else %}bg-secondary{% endif %}">
-                                {{ event.get_event_type_display }}
-                            </span>
-                        </td>
-                        <td class="fw-semibold">{{ event.actor_username }}</td>
-                        <td>
-                            {% if event.target_document_name_snapshot %}
-                                <span class="text-truncate d-inline-block" style="max-width: 250px;">
-                                    {{ event.target_document_name_snapshot }}
-                                </span>
-                            {% elif event.target_username %}
-                                <span class="text-muted">User: {{ event.target_username }}</span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td class="small font-monospace text-muted">{{ event.ip_address|default:"—" }}</td>
-                        <td>
-                            {% if event.status == 'SUCCESS' %}
-                                <span class="badge bg-success-subtle text-success">Success</span>
-                            {% else %}
-                                <span class="badge bg-danger-subtle text-danger">Denied</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">No audit activity recorded yet.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% endif %}
 </div>
 
-<!-- Recent Users Table -->
-<div class="card border-0 shadow-sm rounded-3">
-    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0">
-            <i class="bi bi-clock-history me-2 text-primary"></i> Recently Registered Users
-        </h5>
-        <a href="{% url 'accounts:user_list' %}" class="small text-decoration-none">View All Users &rarr;</a>
+<!-- Global System Activity Feed -->
+<div class="tv-card">
+    <div class="tv-card-header d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0" style="color: var(--tv-text-main);">
+            <i class="bi bi-activity text-primary me-2"></i> Real-Time Audit Activity Feed
+        </h6>
+        <a href="{% url 'audit:trail' %}" class="small fw-semibold">View Full Ledger &rarr;</a>
     </div>
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+        <table class="tv-table">
+            <thead>
                 <tr>
-                    <th class="ps-4">Username</th>
-                    <th>Email</th>
-                    <th>Role</th>
+                    <th>Timestamp (UTC)</th>
+                    <th>Event Type</th>
                     <th>Status</th>
-                    <th>Joined</th>
-                    <th class="text-end pe-4">Action</th>
+                    <th>Actor</th>
+                    <th>Target Document</th>
+                    <th>Origin IP</th>
                 </tr>
             </thead>
             <tbody>
-                {% for u in recent_users %}
+                {% for ev in recent_events %}
                     <tr>
-                        <td class="ps-4 fw-semibold">{{ u.username }}</td>
-                        <td>{{ u.email|default:"—" }}</td>
+                        <td><span class="tv-code-pill">{{ ev.timestamp|date:"Y-m-d H:i:s" }}</span></td>
                         <td>
-                            <span class="badge 
-                                {% if u.role == 'ADMIN' %}bg-danger
-                                {% elif u.role == 'OWNER' %}bg-primary
-                                {% else %}bg-info text-dark{% endif %}">
-                                {{ u.get_role_display }}
+                            <span class="tv-pill 
+                                {% if 'DENIED' in ev.event_type %}tv-pill-danger
+                                {% elif 'GRANTED' in ev.event_type %}tv-pill-success
+                                {% elif 'REVOKED' in ev.event_type %}tv-pill-warning
+                                {% else %}tv-pill-primary{% endif %}">
+                                {{ ev.get_event_type_display }}
                             </span>
                         </td>
                         <td>
-                            {% if u.is_active %}
-                                <span class="badge bg-success-subtle text-success">Active</span>
+                            {% if ev.status == 'SUCCESS' %}
+                                <span class="text-success small fw-semibold"><i class="bi bi-check2"></i> OK</span>
                             {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary">Inactive</span>
+                                <span class="text-danger small fw-semibold"><i class="bi bi-x"></i> REJECT</span>
                             {% endif %}
                         </td>
-                        <td class="small text-muted">{{ u.date_joined|date:"M d, Y" }}</td>
-                        <td class="text-end pe-4">
-                            <a href="{% url 'accounts:user_edit' u.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                        </td>
+                        <td class="fw-semibold">{{ ev.actor_username }}</td>
+                        <td>{{ ev.target_document_name_snapshot|default:"—" }}</td>
+                        <td><span class="tv-code-pill">{{ ev.ip_address }}</span></td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center py-3 text-muted">No users found.</td>
+                        <td colspan="6" class="text-center py-4 text-muted small">No audit events recorded yet.</td>
                     </tr>
                 {% endfor %}
             </tbody>

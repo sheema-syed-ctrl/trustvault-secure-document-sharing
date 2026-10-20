@@ -4,33 +4,41 @@
 
 {% block content %}
 <div class="row justify-content-center py-5">
-    <div class="col-md-8 text-center">
-        <div class="display-1 text-danger fw-bold mb-3">
-            <i class="bi bi-shield-slash"></i> 403
-        </div>
-        <h2 class="fw-bold mb-3">Access Denied / Forbidden</h2>
-        <p class="lead text-muted mb-4">
-            You do not have the required authorization or permissions to access this document or resource.
-            This incident has been securely recorded in the TrustVault audit trail.
-        </p>
-        {% if exception %}
-            <div class="alert alert-warning d-inline-block text-start small mb-4">
-                <strong>Reason:</strong> {{ exception }}
+    <div class="col-12 col-md-8 col-lg-6 text-center">
+        <div class="tv-card p-4 p-md-5">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 72px; height: 72px; background: rgba(239, 68, 68, 0.1); color: var(--tv-danger);">
+                <i class="bi bi-shield-slash fs-1"></i>
             </div>
-        {% endif %}
-        <div>
-            <a href="{% url 'core:home' %}" class="btn btn-outline-secondary px-4 me-2">
-                <i class="bi bi-house-door me-1"></i> Home
-            </a>
-            {% if user.is_authenticated %}
-                <a href="{% url 'dashboard:index' %}" class="btn btn-primary px-4">
-                    <i class="bi bi-speedometer2 me-1"></i> My Dashboard
-                </a>
-            {% else %}
-                <a href="{% url 'accounts:login' %}" class="btn btn-primary px-4">
-                    <i class="bi bi-box-arrow-in-right me-1"></i> Log In
-                </a>
+            <div class="mb-2">
+                <span class="tv-badge tv-badge-danger">Security Boundary Alert &bull; 403 Forbidden</span>
+            </div>
+            <h1 class="h3 fw-bold mb-3">Access Denied</h1>
+            <p class="text-muted mb-4">
+                You do not have the required authorization or permission to access this resource. 
+                In accordance with TrustVault security policies, this access attempt has been logged in the immutable audit trail.
+            </p>
+
+            {% if exception %}
+                <div class="p-3 rounded mb-4 text-start font-monospace small" style="background: var(--tv-surface-subtle); border-left: 3px solid var(--tv-danger);">
+                    <div class="text-muted small text-uppercase fw-semibold mb-1">Security Exception Details:</div>
+                    <div class="text-danger fw-semibold">{{ exception }}</div>
+                </div>
             {% endif %}
+
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <a href="{% url 'core:home' %}" class="btn btn-outline-secondary px-3">
+                    <i class="bi bi-house-door me-1"></i> Home
+                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard:index' %}" class="btn btn-primary px-4 shadow-sm">
+                        <i class="bi bi-speedometer2 me-1"></i> Return to Dashboard
+                    </a>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="btn btn-primary px-4 shadow-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Log In
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>

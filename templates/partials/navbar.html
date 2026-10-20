@@ -1,91 +1,37 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+<!-- Public Unauthenticated Top Navbar -->
+<nav class="navbar navbar-expand-lg border-bottom sticky-top" style="background-color: var(--tv-bg-surface); border-color: var(--tv-border-default) !important;">
     <div class="container">
-        <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'core:home' %}">
-            <i class="bi bi-shield-lock-fill text-primary me-2 fs-4"></i>
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="{% url 'core:home' %}" style="color: var(--tv-text-main);">
+            <div class="tv-brand-icon">
+                <i class="bi bi-shield-lock-fill"></i>
+            </div>
             <span>Trust<span class="text-primary">Vault</span></span>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#trustvaultNav" aria-controls="trustvaultNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#trustvaultPublicNav" aria-controls="trustvaultPublicNav" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-list fs-3" style="color: var(--tv-text-main);"></i>
         </button>
 
-        <div class="collapse navbar-collapse" id="trustvaultNav">
+        <div class="collapse navbar-collapse" id="trustvaultPublicNav">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'dashboard:index' %}">
-                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'documents:list' %}">
-                            <i class="bi bi-folder2-open me-1"></i> Documents
-                        </a>
-                    </li>
-                    {% if user.is_owner_role %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'documents:upload' %}">
-                                <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload
-                            </a>
-                        </li>
-                    {% endif %}
-                    {% if user.is_admin_role %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'audit:trail' %}">
-                                <i class="bi bi-journal-text me-1"></i> Audit Trail
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:user_list' %}">
-                                <i class="bi bi-people-fill me-1"></i> User Mgmt
-                            </a>
-                        </li>
-                    {% endif %}
-                {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'core:home' %}">Home</a>
-                    </li>
-                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link fw-medium" href="{% url 'core:home' %}" style="color: var(--tv-text-secondary);">Overview</a>
+                </li>
             </ul>
 
-            <ul class="navbar-nav ms-auto align-items-center">
-                {% if user.is_authenticated %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <span class="badge 
-                                {% if user.role == 'ADMIN' %}bg-danger
-                                {% elif user.role == 'OWNER' %}bg-primary
-                                {% else %}bg-info text-dark{% endif %} me-2">
-                                {{ user.get_role_display }}
-                            </span>
-                            <span class="fw-semibold">{{ user.username }}</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow">
-                            <li><h6 class="dropdown-header">Logged in as {{ user.username }}</h6></li>
-                            <li><span class="dropdown-item-text text-muted small">{{ user.email|default:"No email configured" }}</span></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form action="{% url 'accounts:logout' %}" method="post" class="px-2 py-1">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100 text-start">
-                                        <i class="bi bi-box-arrow-right me-1"></i> Sign Out
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
-                    </li>
-                {% else %}
-                    <li class="nav-item">
-                        <a class="btn btn-outline-light btn-sm me-2" href="{% url 'accounts:login' %}">
-                            <i class="bi bi-box-arrow-in-right me-1"></i> Log In
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-primary btn-sm" href="{% url 'accounts:register' %}">
-                            <i class="bi bi-person-plus-fill me-1"></i> Register
-                        </a>
-                    </li>
-                {% endif %}
-            </ul>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Theme Toggle Button -->
+                <button type="button" class="tv-theme-toggle me-2" id="tvThemeToggle" title="Toggle color theme" aria-label="Toggle color theme">
+                    <i class="bi bi-moon-stars-fill"></i>
+                </button>
+
+                <a href="{% url 'accounts:login' %}" class="tv-btn tv-btn-secondary tv-btn-sm">
+                    <i class="bi bi-box-arrow-in-right"></i> Sign In
+                </a>
+                <a href="{% url 'accounts:register' %}" class="tv-btn tv-btn-primary tv-btn-sm">
+                    <i class="bi bi-person-plus-fill"></i> Create Account
+                </a>
+            </div>
         </div>
     </div>
 </nav>

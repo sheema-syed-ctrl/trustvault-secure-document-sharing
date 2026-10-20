@@ -1,20 +1,28 @@
 {% extends 'base.html' %}
 
-{% block title %}500 Internal Error — TrustVault{% endblock %}
+{% block title %}500 Internal Server Error — TrustVault{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center py-5">
-    <div class="col-md-8 text-center">
-        <div class="display-1 text-danger fw-bold mb-3">
-            <i class="bi bi-cpu"></i> 500
+    <div class="col-12 col-md-8 col-lg-6 text-center">
+        <div class="tv-card p-4 p-md-5">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 72px; height: 72px; background: rgba(239, 68, 68, 0.1); color: var(--tv-danger);">
+                <i class="bi bi-cpu fs-1"></i>
+            </div>
+            <div class="mb-2">
+                <span class="tv-badge tv-badge-danger">HTTP 500 &bull; Platform Fault</span>
+            </div>
+            <h1 class="h3 fw-bold mb-3">Internal Server Error</h1>
+            <p class="text-muted mb-4">
+                An unexpected server condition occurred while processing your request. 
+                This incident has been securely recorded in the internal system diagnostic logs for engineering review.
+            </p>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="{% url 'core:home' %}" class="btn btn-primary px-4 shadow-sm">
+                    <i class="bi bi-house-door me-1"></i> Return to Safety
+                </a>
+            </div>
         </div>
-        <h2 class="fw-bold mb-3">Internal Server Error</h2>
-        <p class="lead text-muted mb-4">
-            An unexpected error occurred while processing your request. The incident has been recorded in system error logs for investigation.
-        </p>
-        <a href="{% url 'core:home' %}" class="btn btn-primary px-4">
-            <i class="bi bi-house-door me-1"></i> Return Home
-        </a>
     </div>
 </div>
 {% endblock %}

@@ -4,40 +4,49 @@
 
 {% block content %}
 <div class="row justify-content-center py-3">
-    <div class="col-md-8 col-lg-6">
-        <div class="d-flex align-items-center mb-3">
-            <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary btn-sm me-2">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary btn-sm me-3" title="Back to user list">
                 <i class="bi bi-arrow-left"></i>
             </a>
-            <h3 class="fw-bold mb-0">Provision New Platform User</h3>
+            <div>
+                <h1 class="h3 fw-bold mb-0">Provision New Platform User</h1>
+                <p class="text-muted small mb-0">Assign credentials and role boundary</p>
+            </div>
         </div>
 
-        <div class="card shadow-sm border-0 rounded-4">
-            <div class="card-body p-4">
+        <div class="tv-card mb-4">
+            <div class="p-4 p-md-5">
                 <form method="post" action="{% url 'accounts:user_create' %}" novalidate>
                     {% csrf_token %}
 
                     {% if form.non_field_errors %}
-                        <div class="alert alert-danger py-2 small mb-3">
+                        <div class="tv-alert tv-alert-danger mb-4">
                             {% for error in form.non_field_errors %}
-                                <div><i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}</div>
+                                <div class="small"><i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}</div>
                             {% endfor %}
                         </div>
                     {% endif %}
 
-                    <div class="row mb-3">
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">First Name</label>
+                            <label class="form-label small fw-semibold text-secondary">First Name</label>
                             {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Last Name</label>
+                            <label class="form-label small fw-semibold text-secondary">Last Name</label>
                             {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>
+                            {% endif %}
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Username</label>
+                        <label class="form-label small fw-semibold text-secondary">Username</label>
                         {{ form.username }}
                         {% if form.username.errors %}
                             <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
@@ -45,18 +54,22 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Email Address</label>
+                        <label class="form-label small fw-semibold text-secondary">Email Address</label>
                         {{ form.email }}
                         {% if form.email.errors %}
                             <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
                         {% endif %}
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Assign Role</label>
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-secondary">Platform Role</label>
                         {{ form.role }}
-                        <div class="form-text small">
-                            Administrators have platform governance rights. Document Owners manage their own files. Viewers have read/granted access.
+                        <div class="form-text small mt-2">
+                            <ul class="list-unstyled mb-0 small text-muted">
+                                <li><strong>Administrator:</strong> Platform governance &amp; audit inspection</li>
+                                <li><strong>Document Owner:</strong> Upload, organize, and grant access</li>
+                                <li><strong>Viewer:</strong> Access files explicitly shared with them</li>
+                            </ul>
                         </div>
                         {% if form.role.errors %}
                             <div class="text-danger small mt-1">{{ form.role.errors.0 }}</div>
@@ -64,24 +77,34 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Initial Password</label>
-                        {{ form.password1 }}
+                        <label class="form-label small fw-semibold text-secondary">Initial Password</label>
+                        <div class="input-group">
+                            {{ form.password1 }}
+                            <button class="btn btn-outline-secondary" type="button" data-tv-toggle-password="#id_password1" title="Toggle password visibility">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                         {% if form.password1.errors %}
                             <div class="text-danger small mt-1">{{ form.password1.errors.0 }}</div>
                         {% endif %}
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Confirm Initial Password</label>
-                        {{ form.password2 }}
+                        <label class="form-label small fw-semibold text-secondary">Confirm Initial Password</label>
+                        <div class="input-group">
+                            {{ form.password2 }}
+                            <button class="btn btn-outline-secondary" type="button" data-tv-toggle-password="#id_password2" title="Toggle password visibility">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                         {% if form.password2.errors %}
                             <div class="text-danger small mt-1">{{ form.password2.errors.0 }}</div>
                         {% endif %}
                     </div>
 
-                    <div class="d-flex justify-content-end gap-2">
+                    <div class="d-flex justify-content-end gap-2 pt-2 border-top" style="border-color: var(--tv-border) !important;">
                         <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary shadow-sm">
                             <i class="bi bi-person-check-fill me-1"></i> Provision Account
                         </button>
                     </div>
