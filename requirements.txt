@@ -19,5 +19,5 @@ bandit>=1.7.5
 pip-audit>=2.7.0
 certifi>=2026.10.19
 
-# Production Database Driver (Optional for PostgreSQL deployments)
-# psycopg2-binary>=2.9.9
+# Production Database Driver for PostgreSQL
+psycopg2-binary>=2.9.9

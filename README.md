@@ -4,7 +4,7 @@
 **Track:** Python / Django Backend & Fullstack Engineering
 **Primary Stack:** Python 3.13.7, Django 5.2.18, SQLite 3 / PostgreSQL 14+, Custom Design System, Bootstrap 5.3, Vanilla JS
 **Security Baseline:** OWASP ASVS Level 2, Zero-Trust Server-Side Authorization, STRIDE Threat Modeling
-**Test Coverage:** 277 Automated Tests (100% Pass Rate) | 0 Production Vulnerabilities (`bandit`, `pip-audit`)
+**Test Coverage:** 287 Automated Tests (100% Pass Rate) | 0 Production Vulnerabilities (`bandit`, `pip-audit`)
 
 ---
 
@@ -16,10 +16,11 @@ TrustVault is an enterprise-grade secure document-sharing platform engineered to
 2. **Object-Level Authorization Engine:** Server-side evaluation of granular `READ` and `EDIT` permissions on every single request. Grantees cannot delete documents or re-share them.
 3. **Zero-Trust Private File Storage:** Files are stored in an unexposed server directory (`protected_media/`) under cryptographic UUID names (`<uuid4>.bin`) and can never be downloaded or accessed via direct web server static handlers.
 4. **Magic-Byte Signature Verification:** Uploads are validated against binary content signatures via `filetype` rather than easily spoofed client-supplied MIME types and file extensions. Executables (`.exe`, `.sh`, `.bat`, `.py`) are rejected at the gate.
-5. **Real, Immutable Audit Trail:** Every sensitive operation (login, upload, view, download, edit, share, revocation, access denied) is permanently logged with timestamps, IP addresses, actor identities, and metadata. Overridden ORM methods prevent log modification and deletion.
+5. **Real, Immutable Audit Trail:** Every sensitive operation (login, upload, view, download, edit, share, revocation, access denied) is permanently logged with timestamps, IP addresses, actor identities, and metadata. Overridden ORM model methods and custom QuerySet managers prevent record modification and bulk deletion via direct SQL updates.
 6. **Instant Revocation:** Permission revocation takes effect immediately; cached URLs or bookmarked links cannot bypass server-side checks.
 7. **Scoped Document Discovery Engine:** Multi-factor search, filtering, and sorting strictly scoped to authorized documents; unauthorized document titles and metadata are never leaked.
 8. **Role-Tailored Dashboards:** Distinct workspaces for Administrators, Document Owners, and Viewers with privacy-preserving administrative summaries.
+9. **Multi-Factor Login Rate Limiting:** Application-level brute-force defense using multi-factor cache tracking (`IP + normalized username`), throttling abuse after 5 failed attempts per 5-minute window with HTTP 429 status codes.
 
 ---
 
@@ -56,10 +57,10 @@ The following screens represent actual working interfaces captured from the loca
 | **04** | **Immediate Access Revocation** | Dynamic per-request permission evaluation. Revocation terminates detail access, download streaming, and editing instantly. | **100% VERIFIED** |
 | **05** | **Secure File Streaming** | Protected controller streaming via `FileResponse`. Sanitized `Content-Disposition` headers preventing CRLF / header injection. | **100% VERIFIED** |
 | **06** | **Document Metadata Management** | Owners and `EDIT` grantees can update title, description, and category. Owners only can delete; safe physical unlinking post-commit. | **100% VERIFIED** |
-| **07** | **Persistent Audit Trail** | Database-backed `AuditEvent` recording all operations and security denials. Append-only ORM blocks updates/deletions. Historical snapshots. | **100% VERIFIED** |
+| **07** | **Persistent Audit Trail** | Database-backed `AuditEvent` recording all operations and 403 access denials. Append-only ORM with `AuditQuerySet` blocks instance & bulk updates/deletions. | **100% VERIFIED** |
 | **08** | **Scoped Search & Discovery** | Multi-attribute search (query, category, owner, date range, size) strictly scoped to accessible documents. No metadata leakage. | **100% VERIFIED** |
 | **09** | **Role-Specific Dashboards** | Custom dashboards: Admin (metrics, users, audit, no download links), Owner (vault stats, active shares), Viewer (READ/EDIT split). | **100% VERIFIED** |
-| **10** | **Security Hardening & Threat Model** | Comprehensive STRIDE threat model (15 vectors), 36 security tests, OWASP headers (`DENY`, `nosniff`), CSRF tokens, `pip-audit`, `bandit`. | **100% VERIFIED** |
+| **10** | **Security Hardening & Threat Model** | Comprehensive STRIDE threat model (19 vectors), multi-factor login rate limiting (HTTP 429), 46 security/core tests, OWASP headers (`DENY`, `nosniff`), CSRF tokens, `pip-audit`, `bandit`. | **100% VERIFIED** |
 
 ---
 
@@ -141,7 +142,9 @@ flowchart TD
 - **Private Storage Isolation:** Documents are saved to `protected_media/` as `<uuid4>.bin`. Direct web server mapping is strictly prohibited.
 - **Path Traversal Defense:** `DocumentService.get_protected_storage_path` validates that every target file strictly resides inside `PROTECTED_MEDIA_ROOT` using `Path.is_relative_to(root)`.
 - **CRLF & Header Injection Defense:** `Content-Disposition` headers strip `\r` and `\n` control characters.
-- **Audit Immutability:** `AuditEvent.save()` rejects modifications to existing records; `AuditEvent.delete()` raises `PermissionDenied`.
+- **Audit Immutability & ORM Bulk Defense:** `AuditEvent.save()` rejects modifications to existing records; `AuditEvent.delete()` raises `PermissionDenied`. Custom `AuditQuerySet` and `AuditManager` intercept `QuerySet.update()`, `QuerySet.bulk_update()`, and `QuerySet.delete()` to unconditionally raise `ValidationError`, ensuring immutability cannot be bypassed via bulk operations.
+- **Multi-Factor Login Rate Limiting:** `LoginRateLimitService` enforces a sliding window (5 failed attempts per 300s) on composite keys (`sha256(ip + username)`), returning HTTP 429 and resisting credential stuffing.
+- **Persistent Storage Architecture:** `PROTECTED_MEDIA_ROOT` supports absolute mount paths (`/var/data/trustvault_storage`), pairing seamlessly with PaaS persistent disks (Render `disk:` configuration) to eliminate container data loss.
 - **Sensitive Key Redaction:** Passwords, tokens, API keys, session IDs, and absolute drive paths are recursively scrubbed from audit metadata before database persistence.
 
 ---
@@ -151,17 +154,17 @@ flowchart TD
 TrustVault maintains a 100% passing automated test suite covering unit, integration, and security regression vectors:
 
 ```text
-Ran 277 tests in ~35s
+Ran 287 tests in ~45s
 OK
 System check identified no issues (0 silenced).
 ```
 
-### Automated Test Breakdown:
-- `accounts`: 28 tests (RBAC lifecycle, privilege escalation defenses, admin self-protection, dynamic demo seeder, production gates)
-- `core`: 42 tests (6 system architecture + 36 dedicated security regression tests)
-- `documents`: 71 tests (Upload validation, magic bytes, storage isolation, streaming, deletion, discovery)
-- `permissions`: 64 tests (Default-deny, grant, update, revoke, cross-document IDOR, CSRF)
-- `audit`: 32 tests (Append-only immutability, sensitive metadata sanitization, historical snapshots)
+### Automated Test Breakdown (287 Total Tests):
+- `accounts`: 31 tests (RBAC lifecycle, privilege escalation defenses, admin self-protection, dynamic demo seeder, production gates, login rate limiting & brute-force defense)
+- `core`: 46 tests (6 system architecture + 40 dedicated security regression tests)
+- `documents`: 69 tests (Upload validation, magic bytes, storage isolation, streaming, deletion, discovery)
+- `permissions`: 66 tests (Default-deny, grant, update, revoke, cross-document IDOR, CSRF)
+- `audit`: 39 tests (Append-only instance & bulk ORM immutability, access denied audit logging, sensitive metadata sanitization, historical snapshots)
 - `dashboard`: 36 tests (Role isolation, metrics computation, download link suppression)
 
 Run the full suite:
@@ -188,7 +191,7 @@ python manage.py test
 ## 9. Project Documentation Index
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — Comprehensive architectural specification and design patterns
-- [THREATS.md](THREATS.md) — STRIDE Threat Model covering 15 threat vectors with mitigations
+- [THREATS.md](THREATS.md) — STRIDE Threat Model covering 19 threat vectors with mitigations
 - [SECURITY_CHECKLIST.md](SECURITY_CHECKLIST.md) — 18 security domains, 48 verified controls (100% Pass)
 - [PROMPTS.md](PROMPTS.md) — Mandatory AI prompt history and architectural decision logs
 - [API_DOCUMENTATION.md](API_DOCUMENTATION.md) — Complete REST/HTTP endpoint catalog and security specs

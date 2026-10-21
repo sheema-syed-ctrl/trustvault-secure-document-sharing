@@ -284,10 +284,91 @@ Risk levels are calculated using standard likelihood and impact dimensions:
 | `THREAT-D01` | Denial of Service | Upload Validator | **HIGH** | 25 MB size cap before disk write | Low |
 | `THREAT-D02` | Denial of Service | Upload Validator | **HIGH** | Binary magic-byte signature inspection | Low |
 | `THREAT-E01` | Elevation of Privilege | Delete/Share Views | **CRITICAL** | Strict owner-only checks on delete & share | Low |
+
+---
+
+### Sprint 1 Security Remediation Threats (TV-SEC-001 through TV-SEC-004)
+
+#### `THREAT-R03`: Omission of Metadata Access Denial Audit Records (`TV-SEC-001`)
+- **STRIDE Category:** Repudiation / Audit Evasion
+- **Affected Component:** `documents.views` (`document_detail_view`, `document_edit_view`, `document_delete_view`), `permissions.views` (`document_share_manage_view`)
+- **Attack Scenario:** An unauthorized user (Viewer or stranger) attempts to probe document metadata, submit unauthorized metadata edits, delete documents, or view permission lists. While the request is rejected with HTTP 403, if the denial is not persisted to the database audit trail, administrators and SIEM monitors cannot detect targeted reconnaissance.
+- **Preconditions:** Authenticated user attempting unauthorized metadata access.
+- **Impact:** Medium — Evasion of security event auditing; impaired incident response visibility.
+- **Likelihood:** High.
+- **Severity:** **MEDIUM**
+- **Existing Mitigation:** Application views unconditionally raise `PermissionDenied` (HTTP 403) and log warnings to Python `django.security` logger.
+- **Additional Mitigation (Sprint 1):** Explicitly wrapped authorization rejections with `AuditService.log_access_denied(actor=request.user, event_type=..., document=document, metadata={'attempted_action': ...})` across all metadata, edit, delete, and permission endpoints. Audit failures are handled gracefully without failing open.
+- **Verification Test:** `audit.tests.PersistentAuditTrailEngineTests.test_33_unauthorized_metadata_view_creates_audit_denial_record`, `test_34_unauthorized_edit_attempt_creates_audit_denial_record`, `test_35_unauthorized_delete_attempt_creates_audit_denial_record`, `test_36_unauthorized_permission_manage_creates_audit_denial_record`.
+- **Residual Risk:** Low.
+
+#### `THREAT-S04`: Automated Credential Stuffing & High-Frequency Brute-Force (`TV-SEC-002`)
+- **STRIDE Category:** Spoofing / Denial of Service
+- **Affected Component:** `accounts.views.login_view`, `accounts.services.LoginRateLimitService`
+- **Attack Scenario:** An automated adversary submits thousands of rapid password guesses or credential stuffing pairs against `/accounts/login/` without application throttling.
+- **Preconditions:** Attacker with network access to authentication endpoint.
+- **Impact:** Low to Medium — Account compromise via password guessing; CPU exhaustion from PBKDF2 hashing.
+- **Likelihood:** High.
+- **Severity:** **LOW**
+- **Existing Mitigation:** Strong PBKDF2 SHA-256 password hashing with 390,000 iterations.
+- **Additional Mitigation (Sprint 1):** Implemented `LoginRateLimitService` with multi-factor keying (IP + normalized username), throttling clients after 5 failed attempts within 300 seconds (HTTP 429). Applies uniform response timing to mitigate user enumeration. Counters reset upon successful login.
+- **Verification Test:** `accounts.tests.LoginRateLimitingTests.test_repeated_login_failures_trigger_rate_limit`, `test_login_rate_limit_cleared_on_successful_login`, `test_login_rate_limit_does_not_reveal_user_existence`.
+- **Residual Risk:** Low (edge botnets mitigated via upstream Cloudflare / WAF).
+
+#### `THREAT-T04`: Audit Event ORM Bulk Mutation Bypass (`TV-SEC-003`)
+- **STRIDE Category:** Tampering / Repudiation
+- **Affected Component:** `audit.models.AuditEvent`, `audit.models.AuditQuerySet`, `audit.models.AuditManager`
+- **Attack Scenario:** An internal attacker or malicious administrative script executes Django ORM bulk queries (e.g. `AuditEvent.objects.filter(...).delete()` or `.update(status='SUCCESS')`), bypassing instance-level `save()` and `delete()` overrides.
+- **Preconditions:** Internal execution access within Django runtime or management shell.
+- **Impact:** High — Tampering with historical audit evidence at the ORM layer.
+- **Likelihood:** Low.
+- **Severity:** **LOW**
+- **Existing Mitigation:** Instance-level `save()` and `delete()` methods raise `ValidationError`. Django Admin denies add/change/delete permissions.
+- **Additional Mitigation (Sprint 1):** Defined `AuditQuerySet` and `AuditManager` on `AuditEvent` overriding `.update()`, `.bulk_update()`, and `.delete()` to unconditionally raise `ValidationError("AuditEvent records are append-only and cannot be modified via bulk operations.")`.
+- **Verification Test:** `audit.tests.PersistentAuditTrailEngineTests.test_37_audit_event_bulk_queryset_delete_blocked`, `test_38_audit_event_bulk_queryset_update_blocked`, `test_39_audit_event_manager_bulk_update_blocked`.
+- **Residual Risk:** Low (direct raw SQL via DB superuser restricted by PostgreSQL database role permissions).
+
+#### `THREAT-D03`: Ephemeral Container Storage Document Loss Upon Service Restart (`TV-SEC-004`)
+- **STRIDE Category:** Denial of Service / Availability
+- **Affected Component:** `trustvault.settings.PROTECTED_MEDIA_ROOT`, `render.yaml`
+- **Attack Scenario:** A container restart, auto-scaling event, or deployment redeploy purges locally stored files on an ephemeral filesystem, corrupting document availability while leaving orphaned database records.
+- **Preconditions:** Application hosted on standard PaaS container without persistent disk attachment.
+- **Impact:** Medium — Data unavailability; valid document downloads fail with HTTP 404.
+- **Likelihood:** High on free-tier container hosting.
+- **Severity:** **INFORMATIONAL / ARCHITECTURAL**
+- **Existing Mitigation:** Files are stored in private `PROTECTED_MEDIA_ROOT` outside public web serving.
+- **Additional Mitigation (Sprint 1):** Updated `PROTECTED_MEDIA_ROOT` to resolve absolute storage mount paths. Configured Render Blueprint with persistent disk volume (`disk: name: trustvault-storage, mountPath: /var/data/trustvault_storage, sizeGB: 10`). Documented hosting requirement for paid Starter tier on Render.
+- **Verification Test:** Settings resolution verification; storage health check probe (`/health/`).
+- **Residual Risk:** Low on paid persistent disk; documented requirement for deployers.
+
+---
+
+## 3. Summary of STRIDE Threats & Residual Risks
+
+| Threat ID | STRIDE Category | Component | Severity | Mitigation Status | Residual Risk |
+|---|---|---|---|---|---|
+| `THREAT-S01` | Spoofing | Registration Form | **CRITICAL** | Form clean validation rejects ADMIN | Low |
+| `THREAT-S02` | Spoofing | Session Framework | **HIGH** | Session rotation, HttpOnly, SameSite, Secure | Low |
+| `THREAT-S03` | Spoofing | Login View | **MEDIUM** | `url_has_allowed_host_and_scheme` check | Low |
+| `THREAT-S04` | Spoofing | Login Rate Limiter | **LOW** | 5-attempt/300s multi-factor throttling (HTTP 429) | Low |
+| `THREAT-T01` | Tampering | Permission Views | **HIGH** | Compound document-permission validation | Low |
+| `THREAT-T02` | Tampering | File Upload Service | **CRITICAL** | UUID filenames, path traversal sanitization | Low |
+| `THREAT-T03` | Tampering | Audit Model | **HIGH** | Append-only model `.save()` override | Low |
+| `THREAT-T04` | Tampering | Audit QuerySet | **LOW** | `AuditQuerySet` blocks `.update()` and `.delete()` | Low |
+| `THREAT-R01` | Repudiation | Document Service | **HIGH** | Historical audit snapshots on deletion | Low |
+| `THREAT-R02` | Repudiation | Audit Model | **CRITICAL** | `.delete()` raises ValidationError | Low |
+| `THREAT-R03` | Repudiation | Views / Audit Service | **MEDIUM** | `SECURITY_ACCESS_DENIED` persisted on metadata & edit | Low |
+| `THREAT-I01` | Information Disclosure | Download Service | **CRITICAL** | Server-side `PermissionService.can_read()` | Low |
+| `THREAT-I02` | Information Disclosure | Search Service | **HIGH** | Base queryset pre-filtered to accessible docs | Low |
+| `THREAT-I03` | Information Disclosure | Audit Logging | **HIGH** | Recursive metadata & path sanitization | Low |
+| `THREAT-D01` | Denial of Service | Upload Validator | **HIGH** | 25 MB size cap before disk write | Low |
+| `THREAT-D02` | Denial of Service | Upload Validator | **HIGH** | Binary magic-byte signature inspection | Low |
+| `THREAT-D03` | Denial of Service | Storage / Render Disk | **INFORMATIONAL**| Configured persistent volume mount at `/var/data` | Low |
+| `THREAT-E01` | Elevation of Privilege | Delete/Share Views | **CRITICAL** | Strict owner-only checks on delete & share | Low |
 | `THREAT-E02` | Elevation of Privilege | Admin Dashboard | **CRITICAL** | Separation of admin governance and content | Low |
 
 ---
 
 ## 4. Verification & Audit Conclusion
 
-All 15 STRIDE threat vectors are actively mitigated in the TrustVault codebase and backed by automated regression tests in `core/test_security.py`, `accounts/tests.py`, `documents/tests.py`, `permissions/tests.py`, `audit/tests.py`, and `dashboard/tests.py`. Zero Critical or High unresolved security vulnerabilities exist in the application architecture.
+All 19 STRIDE threat vectors (including the 4 Sprint 1 remediations) are actively mitigated in the TrustVault codebase and backed by automated regression tests in `core/test_security.py`, `accounts/tests.py`, `documents/tests.py`, `permissions/tests.py`, `audit/tests.py`, and `dashboard/tests.py`. Zero Critical or High unresolved security vulnerabilities exist in the application architecture.

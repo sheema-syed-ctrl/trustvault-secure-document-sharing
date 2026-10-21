@@ -138,6 +138,18 @@ def document_detail_view(request, doc_id):
 
     # Server-side authorization check via PermissionService
     if not PermissionService.can_read(request.user, document):
+        try:
+            from audit.services import AuditService
+            AuditService.log_access_denied(
+                actor=request.user,
+                event_type='DOCUMENT_VIEW',
+                document=document,
+                reason="Unauthorized document metadata inspection attempt.",
+                request=request,
+                metadata={'attempted_action': 'VIEW_METADATA'}
+            )
+        except Exception as audit_err:
+            logger.warning("Audit denial logging failed: %s", audit_err)
         raise PermissionDenied("Access denied: You do not have authorization to view this document.")
 
     can_edit = PermissionService.can_edit(request.user, document)
@@ -166,6 +178,18 @@ def document_edit_view(request, doc_id):
 
     # Server-side authorization check via PermissionService
     if not PermissionService.can_edit(request.user, document):
+        try:
+            from audit.services import AuditService
+            AuditService.log_access_denied(
+                actor=request.user,
+                event_type='DOCUMENT_EDIT',
+                document=document,
+                reason="Unauthorized document edit attempt.",
+                request=request,
+                metadata={'attempted_action': 'EDIT_METADATA'}
+            )
+        except Exception as audit_err:
+            logger.warning("Audit denial logging failed: %s", audit_err)
         raise PermissionDenied("Access denied: You do not have permission to edit this document.")
 
     if request.method == 'POST':
@@ -200,6 +224,18 @@ def document_delete_view(request, doc_id):
 
     # Server-side authorization check via PermissionService
     if not PermissionService.can_delete(request.user, document):
+        try:
+            from audit.services import AuditService
+            AuditService.log_access_denied(
+                actor=request.user,
+                event_type='DOCUMENT_DELETE',
+                document=document,
+                reason="Unauthorized document deletion attempt.",
+                request=request,
+                metadata={'attempted_action': 'DELETE_DOCUMENT'}
+            )
+        except Exception as audit_err:
+            logger.warning("Audit denial logging failed: %s", audit_err)
         raise PermissionDenied("Access denied: Only the document owner can delete this document.")
 
     name = document.name

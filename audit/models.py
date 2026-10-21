@@ -37,6 +37,29 @@ class AuditStatus(models.TextChoices):
     WARNING = 'WARNING', _('Warning')
 
 
+class AuditQuerySet(models.QuerySet):
+    """
+    Append-only QuerySet enforcing immutable audit records.
+    Explicitly intercepts and blocks bulk modification and deletion operations.
+    """
+
+    def update(self, **kwargs):
+        raise ValidationError("AuditEvent records are append-only and cannot be modified via bulk operations.")
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValidationError("AuditEvent records are append-only and cannot be modified via bulk operations.")
+
+    def delete(self):
+        raise ValidationError("AuditEvent records are immutable and cannot be deleted via bulk operations.")
+
+
+class AuditManager(models.Manager.from_queryset(AuditQuerySet)):
+    """
+    Manager for AuditEvent enforcing tamper resistance across both instance and queryset levels.
+    """
+    pass
+
+
 class AuditEvent(models.Model):
     """
     Persistent, tamper-resistant record of document and permission events.
@@ -46,6 +69,8 @@ class AuditEvent(models.Model):
         the foreign-key entity is subsequently removed.
       - Never stores passwords, tokens, session IDs, CSRF tokens, or private file contents.
     """
+
+    objects = AuditManager()
 
     id = models.BigAutoField(primary_key=True)
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)

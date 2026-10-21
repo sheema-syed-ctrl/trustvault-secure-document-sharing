@@ -19,6 +19,7 @@ User = get_user_model()
 def login_view(request):
     """
     Secure user authentication endpoint.
+    Enforces login rate limiting against brute-force attacks and credential stuffing.
     Rotates session key on success to prevent session fixation attacks.
     Validates redirect target against allowed hosts to prevent open redirects.
     """
@@ -26,9 +27,24 @@ def login_view(request):
         return redirect('dashboard:index')
 
     if request.method == 'POST':
+        raw_username = request.POST.get('username', '').strip()
+        from .services import LoginRateLimitService
+
+        is_blocked, retry_after = LoginRateLimitService.is_throttled(request, raw_username)
+        if is_blocked:
+            minutes = max(1, (retry_after + 59) // 60)
+            messages.error(
+                request,
+                f"Too many failed login attempts. For security, login is temporarily throttled. "
+                f"Please wait {minutes} minutes before trying again."
+            )
+            form = UserLoginForm(request, data=request.POST)
+            return render(request, 'accounts/login.html', {'form': form}, status=429)
+
         form = UserLoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
+            LoginRateLimitService.clear_failed_attempts(request, user.username)
             auth_login(request, user)
             messages.success(request, f"Welcome back, {user.username}! Signed in as {user.get_role_display()}.")
 
@@ -40,6 +56,7 @@ def login_view(request):
                 return redirect(next_url)
             return redirect('dashboard:index')
         else:
+            LoginRateLimitService.record_failed_attempt(request, raw_username)
             messages.error(request, "Invalid username or password. Please verify your credentials.")
     else:
         form = UserLoginForm(request)

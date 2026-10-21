@@ -533,3 +533,85 @@ class PersistentAuditTrailEngineTests(TestCase):
         self.client.login(username='audit_admin', password=self.password)
         res_post = self.client.post(reverse('audit:trail'), {'event_type': 'FAKE_EVENT'})
         self.assertEqual(res_post.status_code, 405)
+
+    def test_33_unauthorized_metadata_view_creates_audit_denial_record(self):
+        """33. Unauthorized metadata inspection creates a SECURITY_ACCESS_DENIED audit record (TV-SEC-001)."""
+        self.client.login(username='audit_david', password=self.password)
+        res = self.client.get(reverse('documents:detail', kwargs={'doc_id': self.alice_doc.pk}))
+        self.assertEqual(res.status_code, 403)
+
+        denial_event = AuditEvent.objects.filter(
+            event_type=AuditEventType.SECURITY_ACCESS_DENIED,
+            actor=self.viewer_david,
+            target_document_id=self.alice_doc.pk
+        ).first()
+        self.assertIsNotNone(denial_event)
+        self.assertEqual(denial_event.status, AuditStatus.FAILURE)
+        self.assertEqual(denial_event.metadata.get('attempted_action'), 'VIEW_METADATA')
+
+    def test_34_unauthorized_edit_attempt_creates_audit_denial_record(self):
+        """34. Unauthorized document edit attempt creates a SECURITY_ACCESS_DENIED audit record (TV-SEC-001)."""
+        self.client.login(username='audit_david', password=self.password)
+        res = self.client.get(reverse('documents:edit', kwargs={'doc_id': self.alice_doc.pk}))
+        self.assertEqual(res.status_code, 403)
+
+        denial_event = AuditEvent.objects.filter(
+            event_type=AuditEventType.SECURITY_ACCESS_DENIED,
+            actor=self.viewer_david,
+            target_document_id=self.alice_doc.pk
+        ).filter(metadata__attempted_action='EDIT_METADATA').first()
+        self.assertIsNotNone(denial_event)
+        self.assertEqual(denial_event.status, AuditStatus.FAILURE)
+
+    def test_35_unauthorized_delete_attempt_creates_audit_denial_record(self):
+        """35. Unauthorized document delete attempt creates a SECURITY_ACCESS_DENIED audit record (TV-SEC-001)."""
+        self.client.login(username='audit_david', password=self.password)
+        res = self.client.post(reverse('documents:delete', kwargs={'doc_id': self.alice_doc.pk}))
+        self.assertEqual(res.status_code, 403)
+
+        denial_event = AuditEvent.objects.filter(
+            event_type=AuditEventType.SECURITY_ACCESS_DENIED,
+            actor=self.viewer_david,
+            target_document_id=self.alice_doc.pk
+        ).filter(metadata__attempted_action='DELETE_DOCUMENT').first()
+        self.assertIsNotNone(denial_event)
+        self.assertEqual(denial_event.status, AuditStatus.FAILURE)
+
+    def test_36_unauthorized_permission_manage_creates_audit_denial_record(self):
+        """36. Unauthorized permission manage attempt creates a SECURITY_ACCESS_DENIED audit record (TV-SEC-001)."""
+        self.client.login(username='audit_david', password=self.password)
+        res = self.client.get(reverse('permissions:manage', kwargs={'doc_id': self.alice_doc.pk}))
+        self.assertEqual(res.status_code, 403)
+
+        denial_event = AuditEvent.objects.filter(
+            event_type=AuditEventType.SECURITY_ACCESS_DENIED,
+            actor=self.viewer_david,
+            target_document_id=self.alice_doc.pk
+        ).filter(metadata__attempted_action='MANAGE_PERMISSIONS').first()
+        self.assertIsNotNone(denial_event)
+        self.assertEqual(denial_event.status, AuditStatus.FAILURE)
+
+    def test_37_audit_event_bulk_queryset_delete_blocked(self):
+        """37. QuerySet.delete() bulk deletion on AuditEvent is blocked (TV-SEC-003)."""
+        event = AuditEvent.objects.first()
+        self.assertIsNotNone(event)
+        with self.assertRaises(ValidationError) as ctx:
+            AuditEvent.objects.filter(pk=event.pk).delete()
+        self.assertIn("cannot be deleted via bulk operations", str(ctx.exception))
+
+    def test_38_audit_event_bulk_queryset_update_blocked(self):
+        """38. QuerySet.update() bulk modification on AuditEvent is blocked (TV-SEC-003)."""
+        event = AuditEvent.objects.first()
+        self.assertIsNotNone(event)
+        with self.assertRaises(ValidationError) as ctx:
+            AuditEvent.objects.filter(pk=event.pk).update(status=AuditStatus.FAILURE)
+        self.assertIn("cannot be modified via bulk operations", str(ctx.exception))
+
+    def test_39_audit_event_manager_bulk_update_blocked(self):
+        """39. Manager.bulk_update() on AuditEvent is blocked (TV-SEC-003)."""
+        event = AuditEvent.objects.first()
+        self.assertIsNotNone(event)
+        event.status = AuditStatus.FAILURE
+        with self.assertRaises(ValidationError) as ctx:
+            AuditEvent.objects.bulk_update([event], ['status'])
+        self.assertIn("cannot be modified via bulk operations", str(ctx.exception))

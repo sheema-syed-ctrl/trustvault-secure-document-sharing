@@ -7,6 +7,10 @@ services:
     buildCommand: "./build.sh"
     startCommand: "gunicorn trustvault.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --log-file -"
     healthCheckPath: "/health/"
+    disk:
+      name: trustvault-storage
+      mountPath: /var/data/trustvault_storage
+      sizeGB: 10
     envVars:
       - key: PYTHON_VERSION
         value: 3.13.7
@@ -32,6 +36,8 @@ services:
         value: "True"
       - key: SECURE_HSTS_PRELOAD
         value: "True"
+      - key: PROTECTED_MEDIA_DIR
+        value: "/var/data/trustvault_storage"
       - key: DATABASE_URL
         fromDatabase:
           name: trustvault-postgres

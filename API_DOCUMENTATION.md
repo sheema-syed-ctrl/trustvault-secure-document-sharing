@@ -15,7 +15,8 @@ TrustVault is architected around a server-rendered modular Django monolith augme
 1. **Default-Deny Authorization:** Every request is authenticated and authorized at the view/service layer.
 2. **CSRF Enforcement:** All state-changing operations (`POST`) strictly require a valid CSRF token.
 3. **HTTP Strict Transport Security & Clickjacking Protection:** `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`.
-4. **Audit Trail Persistence:** Every state change, authorization failure, and file download triggers a database-backed `AuditEvent`.
+4. **Audit Trail Persistence & Immutability:** Every state change, authorization failure (HTTP 403), and file download triggers a database-backed `AuditEvent`. Audit records are strictly append-only, enforced at both the model instance and ORM `QuerySet` level (intercepting `.update()`, `.bulk_update()`, `.delete()`).
+5. **Multi-Factor Rate Limiting:** High-frequency authentication attempts are throttled using cache-backed sliding windows (5 failed attempts per 300s window) returning HTTP 429 Too Many Requests.
 
 ---
 
@@ -75,7 +76,27 @@ TrustVault is architected around a server-rendered modular Django monolith augme
 
 ---
 
-### 3.2 Document Upload
+### 3.2 Authentication & Rate-Limited Login
+- **Endpoint:** `POST /accounts/login/`
+- **Authentication:** Anonymous / Unauthenticated.
+- **Headers:** `Content-Type: application/x-www-form-urlencoded`, `X-CSRFToken: <token>`
+- **Parameters:**
+  - `username`: string
+  - `password`: string
+- **Security & Rate Limiting Controls:**
+  - Enforces `LoginRateLimitService`: Throttles brute force attacks across multi-factor composite keys (`sha256(ip + normalized_username)`).
+  - Maximum 5 failed attempts per 300-second (5-minute) sliding window.
+  - Uniform timing and generic error responses prevent username enumeration attacks.
+  - Successful authentication clears the rate limit counter.
+- **Success Response:** 302 Redirect to `/dashboard/` with session cookie.
+- **Throttled Response (429 Too Many Requests):**
+  - Renders login page with status code 429 and error: "Too many failed login attempts. Please try again in 5 minutes."
+- **Failed Response (200 OK):**
+  - Renders login page with generic credential failure notification.
+
+---
+
+### 3.3 Document Upload
 - **Endpoint:** `POST /documents/upload/`
 - **Authentication:** Required (User role must be `OWNER`).
 - **Headers:** `Content-Type: multipart/form-data`, `X-CSRFToken: <token>`
@@ -95,7 +116,7 @@ TrustVault is architected around a server-rendered modular Django monolith augme
 
 ---
 
-### 3.3 Protected Document Download & Streaming
+### 3.4 Protected Document Download & Streaming
 - **Endpoint:** `GET /documents/<id>/download/`
 - **Authentication:** Required (Owner or active grantee with `READ` or `EDIT`).
 - **Behavior:**
@@ -114,7 +135,7 @@ TrustVault is architected around a server-rendered modular Django monolith augme
 
 ---
 
-### 3.4 Permission Granting & Revocation
+### 3.5 Permission Granting & Revocation
 - **Endpoint:** `POST /permissions/document/<id>/grant/`
 - **Authentication:** Required (Document Owner only).
 - **Parameters:**
@@ -137,7 +158,7 @@ TrustVault is architected around a server-rendered modular Django monolith augme
 
 ---
 
-### 3.5 Global Audit Trail
+### 3.6 Global Audit Trail & Immutability
 - **Endpoint:** `GET /audit/`
 - **Authentication:** Required (User role must be `ADMIN`).
 - **Query Parameters:**
@@ -148,10 +169,12 @@ TrustVault is architected around a server-rendered modular Django monolith augme
 - **Access Control:**
   - Document Owners and Viewers attempting to access `/audit/` receive HTTP 403 Forbidden.
   - Audit event logs are completely read-only; no modification or deletion endpoints exist.
+  - Enforces ORM-level immutability (`AuditQuerySet` raises `ValidationError` on `update()`, `bulk_update()`, and `delete()`).
+  - Automatically captures persistent `SECURITY_ACCESS_DENIED` events across document metadata inspection, edit attempts, delete requests, and unauthorized permission management attempts.
 
 ---
 
-### 3.6 Role-Specific Dashboards
+### 3.7 Role-Specific Dashboards
 - **Endpoint:** `GET /dashboard/`
 - **Authentication:** Required.
 - **Dispatch Logic:**

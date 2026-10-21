@@ -34,6 +34,18 @@ def document_share_manage_view(request, doc_id):
             f"Unauthorized permission management access: User '{request.user.username}' (ID: {request.user.pk}, "
             f"Role: {request.user.role}) denied access to permissions for document {document.pk}."
         )
+        try:
+            from audit.services import AuditService
+            AuditService.log_access_denied(
+                actor=request.user,
+                event_type='PERMISSION_MANAGE',
+                document=document,
+                reason="Unauthorized permission management access attempt.",
+                request=request,
+                metadata={'attempted_action': 'MANAGE_PERMISSIONS'}
+            )
+        except Exception as audit_err:
+            logger.warning("Audit denial logging failed: %s", audit_err)
         raise PermissionDenied("Access denied: Only the document owner can manage permissions for this document.")
 
     search_query = request.GET.get('q', '').strip()
@@ -94,6 +106,18 @@ def document_permission_grant_view(request, doc_id):
     document = get_object_or_404(Document, pk=doc_id)
 
     if not PermissionService.can_manage_permissions(request.user, document):
+        try:
+            from audit.services import AuditService
+            AuditService.log_access_denied(
+                actor=request.user,
+                event_type='PERMISSION_GRANT',
+                document=document,
+                reason="Unauthorized permission grant attempt.",
+                request=request,
+                metadata={'attempted_action': 'GRANT_PERMISSION'}
+            )
+        except Exception as audit_err:
+            logger.warning("Audit denial logging failed: %s", audit_err)
         raise PermissionDenied("Access denied: Only the document owner can grant permissions for this document.")
 
     form = DocumentShareForm(request.POST, document=document, actor=request.user)
@@ -129,6 +153,18 @@ def document_permission_update_view(request, doc_id, perm_id):
     document = get_object_or_404(Document, pk=doc_id)
 
     if not PermissionService.can_manage_permissions(request.user, document):
+        try:
+            from audit.services import AuditService
+            AuditService.log_access_denied(
+                actor=request.user,
+                event_type='PERMISSION_UPDATE',
+                document=document,
+                reason="Unauthorized permission update attempt.",
+                request=request,
+                metadata={'attempted_action': 'UPDATE_PERMISSION'}
+            )
+        except Exception as audit_err:
+            logger.warning("Audit denial logging failed: %s", audit_err)
         raise PermissionDenied("Access denied: Only the document owner can modify permissions.")
 
     form = DocumentPermissionUpdateForm(request.POST)
@@ -169,6 +205,18 @@ def document_permission_revoke_view(request, doc_id, perm_id):
     document = get_object_or_404(Document, pk=doc_id)
 
     if not PermissionService.can_manage_permissions(request.user, document):
+        try:
+            from audit.services import AuditService
+            AuditService.log_access_denied(
+                actor=request.user,
+                event_type='PERMISSION_REVOKE',
+                document=document,
+                reason="Unauthorized permission revocation attempt.",
+                request=request,
+                metadata={'attempted_action': 'REVOKE_PERMISSION'}
+            )
+        except Exception as audit_err:
+            logger.warning("Audit denial logging failed: %s", audit_err)
         raise PermissionDenied("Access denied: Only the document owner can revoke permissions.")
 
     success = PermissionService.revoke_permission_by_id(
@@ -196,6 +244,18 @@ def user_search_api_view(request, doc_id):
     document = get_object_or_404(Document, pk=doc_id)
 
     if not PermissionService.can_manage_permissions(request.user, document):
+        try:
+            from audit.services import AuditService
+            AuditService.log_access_denied(
+                actor=request.user,
+                event_type='USER_SEARCH',
+                document=document,
+                reason="Unauthorized recipient search attempt.",
+                request=request,
+                metadata={'attempted_action': 'SEARCH_USERS'}
+            )
+        except Exception as audit_err:
+            logger.warning("Audit denial logging failed: %s", audit_err)
         raise PermissionDenied("Access denied: Only the document owner can search recipients for this document.")
 
     query = request.GET.get('q', '').strip()

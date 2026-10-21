@@ -500,3 +500,78 @@ class SeedDemoDataCommandTests(TestCase):
         self.assertTrue(User.objects.filter(username='admin_demo').exists())
         self.assertTrue(User.objects.filter(username='owner_demo').exists())
         self.assertTrue(User.objects.filter(username='viewer_demo').exists())
+
+
+class LoginRateLimitingTests(TestCase):
+    """Automated regression tests for login rate limiting and brute force prevention (TV-SEC-002)."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.client = Client()
+        self.password = "StrongPass123!@#"
+        self.owner_user = User.objects.create_user(
+            username='rate_limit_bob',
+            email='rlbob@trustvault.local',
+            password=self.password,
+            role=User.Role.OWNER
+        )
+
+    def tearDown(self):
+        from django.core.cache import cache
+        cache.clear()
+
+    def test_repeated_login_failures_trigger_rate_limit(self):
+        """Repeated login failures trigger HTTP 429 throttling (TV-SEC-002)."""
+        for _ in range(5):
+            res = self.client.post(reverse('accounts:login'), {
+                'username': 'rate_limit_bob',
+                'password': 'WrongPassword123!'
+            })
+            self.assertEqual(res.status_code, 200)
+
+        # 6th attempt should be blocked with 429
+        throttled_res = self.client.post(reverse('accounts:login'), {
+            'username': 'rate_limit_bob',
+            'password': 'WrongPassword123!'
+        })
+        self.assertEqual(throttled_res.status_code, 429)
+        self.assertIn(b"temporarily throttled", throttled_res.content)
+
+    def test_login_rate_limit_cleared_on_successful_login(self):
+        """Successful login clears failed attempt counter (TV-SEC-002)."""
+        # Send 2 failed attempts
+        for _ in range(2):
+            self.client.post(reverse('accounts:login'), {
+                'username': 'rate_limit_bob',
+                'password': 'WrongPassword123!'
+            })
+
+        # Legitimate login succeeds and clears counter
+        success_res = self.client.post(reverse('accounts:login'), {
+            'username': 'rate_limit_bob',
+            'password': self.password
+        })
+        self.assertEqual(success_res.status_code, 302)
+
+        # Verify counter was cleared
+        from accounts.services import LoginRateLimitService
+        is_blocked, _ = LoginRateLimitService.is_throttled(None, 'rate_limit_bob')
+        self.assertFalse(is_blocked)
+
+    def test_login_rate_limit_does_not_reveal_user_existence(self):
+        """Throttling applies equally to non-existent users, preventing enumeration (TV-SEC-002)."""
+        fake_username = 'completely_nonexistent_user_999'
+        for _ in range(5):
+            res = self.client.post(reverse('accounts:login'), {
+                'username': fake_username,
+                'password': 'WrongPassword123!'
+            })
+            self.assertEqual(res.status_code, 200)
+
+        throttled_res = self.client.post(reverse('accounts:login'), {
+            'username': fake_username,
+            'password': 'WrongPassword123!'
+        })
+        self.assertEqual(throttled_res.status_code, 429)
+        self.assertIn(b"temporarily throttled", throttled_res.content)

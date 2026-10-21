@@ -167,7 +167,11 @@ STORAGES = {
 # Crucial Security Rule: Protected documents MUST NEVER be stored in public MEDIA_ROOT
 # or served directly via web server static handlers.
 # All document access MUST flow through authenticated, authorized controller endpoints.
-PROTECTED_MEDIA_ROOT = BASE_DIR / os.getenv('PROTECTED_MEDIA_DIR', 'protected_media')
+_protected_media_env = os.getenv('PROTECTED_MEDIA_DIR', 'protected_media')
+if os.path.isabs(_protected_media_env):
+    PROTECTED_MEDIA_ROOT = Path(_protected_media_env)
+else:
+    PROTECTED_MEDIA_ROOT = BASE_DIR / _protected_media_env
 PROTECTED_MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 
 # Maximum file upload size (default 25 MB)
