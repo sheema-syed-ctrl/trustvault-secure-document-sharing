@@ -6,70 +6,88 @@
         </button>
 
         <!-- Dynamic Breadcrumb Trail -->
-        <ol class="tv-breadcrumb d-none d-sm-flex">
-            <li><a href="{% url 'dashboard:index' %}">Vault</a></li>
-            <li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
-            {% block breadcrumbs %}
-                {% if request.resolver_match.app_name == 'dashboard' %}
-                    <li class="tv-breadcrumb-current">Dashboard</li>
-                {% elif request.resolver_match.app_name == 'documents' %}
-                    <li><a href="{% url 'documents:list' %}">Documents</a></li>
-                    {% if request.resolver_match.url_name == 'upload' %}
-                        <li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
-                        <li class="tv-breadcrumb-current">Upload</li>
-                    {% elif request.resolver_match.url_name == 'detail' %}
-                        <li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
-                        <li class="tv-breadcrumb-current">Details</li>
+        <nav aria-label="Breadcrumb" class="d-none d-sm-block">
+            <ol class="tv-breadcrumb">
+                <li><a href="{% url 'dashboard:index' %}">Vault</a></li>
+                <li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
+                {% block breadcrumbs %}
+                    {% if request.resolver_match.app_name == 'dashboard' %}
+                        <li class="tv-breadcrumb-current">Dashboard</li>
+                    {% elif request.resolver_match.app_name == 'documents' %}
+                        <li><a href="{% url 'documents:list' %}">Documents</a></li>
+                        {% if request.resolver_match.url_name == 'upload' %}
+                            <li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
+                            <li class="tv-breadcrumb-current">Upload</li>
+                        {% elif request.resolver_match.url_name == 'detail' %}
+                            <li class="tv-breadcrumb-sep"><i class="bi bi-chevron-right"></i></li>
+                            <li class="tv-breadcrumb-current">Details</li>
+                        {% endif %}
+                    {% elif request.resolver_match.app_name == 'audit' %}
+                        <li class="tv-breadcrumb-current">Audit Trail</li>
+                    {% elif request.resolver_match.app_name == 'accounts' %}
+                        <li class="tv-breadcrumb-current">User Governance</li>
+                    {% else %}
+                        <li class="tv-breadcrumb-current">Workspace</li>
                     {% endif %}
-                {% elif request.resolver_match.app_name == 'audit' %}
-                    <li class="tv-breadcrumb-current">Audit Trail</li>
-                {% elif request.resolver_match.app_name == 'accounts' %}
-                    <li class="tv-breadcrumb-current">User Governance</li>
-                {% else %}
-                    <li class="tv-breadcrumb-current">Workspace</li>
-                {% endif %}
-            {% endblock %}
-        </ol>
+                {% endblock %}
+            </ol>
+        </nav>
     </div>
 
-    <!-- Right Side Actions & Theme Switcher -->
+    <!-- Right Side Actions & Unified User Menu -->
     <div class="tv-topbar-actions">
-        {% if user.is_owner_role and request.resolver_match.url_name != 'upload' %}
-            <a href="{% url 'documents:upload' %}" class="tv-btn tv-btn-primary tv-btn-sm d-none d-md-inline-flex" title="Upload new document">
-                <i class="bi bi-cloud-arrow-up-fill"></i>
-                <span>Upload</span>
-            </a>
-        {% elif user.is_admin_role and request.resolver_match.url_name != 'user_create' %}
-            <a href="{% url 'accounts:user_create' %}" class="tv-btn tv-btn-primary tv-btn-sm d-none d-md-inline-flex" title="Provision new user">
-                <i class="bi bi-person-plus-fill"></i>
-                <span>Add User</span>
-            </a>
-        {% endif %}
-
         <!-- Persistent Theme Toggle (Dark / Light) -->
         <button type="button" class="tv-theme-toggle" id="tvThemeToggle" title="Toggle color theme" aria-label="Toggle color theme">
-            <i class="bi bi-moon-stars-fill"></i>
+            <i class="bi bi-sun-fill tv-theme-icon-light"></i>
+            <i class="bi bi-moon-stars-fill tv-theme-icon-dark"></i>
         </button>
 
-        <!-- User Role Badge -->
+        <!-- Unified User Profile Dropdown -->
         <div class="dropdown">
-            <button class="tv-btn tv-btn-secondary tv-btn-sm dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="d-none d-md-inline fw-semibold">{{ user.username }}</span>
-                <span class="tv-pill 
-                    {% if user.role == 'ADMIN' %}tv-pill-danger
-                    {% elif user.role == 'OWNER' %}tv-pill-primary
-                    {% else %}tv-pill-info{% endif %}">
-                    {{ user.get_role_display }}
+            <button class="tv-user-menu-btn dropdown-toggle" type="button" id="userMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="tv-user-menu-avatar">
+                    {{ user.username|make_list|first|upper }}
                 </span>
+                <span class="d-none d-md-flex flex-column text-start">
+                    <span class="tv-user-menu-name">{{ user.username }}</span>
+                    <span class="tv-user-menu-role">
+                        {% if user.role == 'ADMIN' %}Administrator
+                        {% elif user.role == 'OWNER' %}Document Owner
+                        {% else %}Viewer{% endif %}
+                    </span>
+                </span>
+                <i class="bi bi-chevron-down small opacity-75 ms-1"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm border mt-2">
-                <li><h6 class="dropdown-header">Active Session</h6></li>
-                <li><span class="dropdown-item-text small text-muted">{{ user.email|default:"No email set" }}</span></li>
-                <li><hr class="dropdown-divider"></li>
+            <ul class="dropdown-menu dropdown-menu-end tv-dropdown-menu shadow-lg border mt-2" aria-labelledby="userMenuDropdown">
+                <li class="px-3 py-2 border-bottom">
+                    <div class="fw-semibold text-truncate" style="color: var(--tv-text-main);">{{ user.username }}</div>
+                    <div class="small text-muted text-truncate">{{ user.email|default:"No email set" }}</div>
+                    <div class="mt-1">
+                        <span class="tv-badge 
+                            {% if user.role == 'ADMIN' %}tv-badge-danger
+                            {% elif user.role == 'OWNER' %}tv-badge-primary
+                            {% else %}tv-badge-info{% endif %}">
+                            {{ user.get_role_display }}
+                        </span>
+                    </div>
+                </li>
                 <li>
-                    <form action="{% url 'accounts:logout' %}" method="post" class="px-2 py-1 m-0">
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{% url 'dashboard:index' %}">
+                        <i class="bi bi-grid-1x2 text-muted"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{% url 'documents:list' %}">
+                        <i class="bi bi-folder2 text-muted"></i>
+                        <span>Documents</span>
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li class="p-2">
+                    <form action="{% url 'accounts:logout' %}" method="post" class="m-0">
                         {% csrf_token %}
-                        <button type="submit" class="tv-btn tv-btn-outline-danger tv-btn-sm w-100 justify-content-start">
+                        <button type="submit" class="tv-btn tv-btn-ghost-danger tv-btn-sm w-100 justify-content-start">
                             <i class="bi bi-box-arrow-right me-2"></i> Sign Out
                         </button>
                     </form>

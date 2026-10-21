@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" data-bs-theme="dark">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,26 +20,24 @@
     <link rel="stylesheet" href="{% static 'css/trustvault.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body>
     <!-- Accessible Skip Link -->
-    <a href="#mainContent" class="visually-hidden-focusable p-3 bg-primary text-white position-absolute top-0 start-0 z-3">
-        Skip to main content
-    </a>
+    <a href="#mainContent" class="tv-skip-link">Skip to main content</a>
 
     {% if user.is_authenticated %}
-        <!-- Authenticated App Shell (Sidebar + Topbar + Content) -->
+        <!-- Authenticated Application Shell -->
         <div class="tv-app-shell">
             {% include 'partials/sidebar.html' %}
             <div class="tv-app-main">
                 {% include 'partials/topbar.html' %}
-                <main id="mainContent" class="tv-app-content tv-animate-fade" tabindex="-1">
+                <main id="mainContent" class="tv-app-content" tabindex="-1">
                     {% include 'partials/messages.html' %}
     {% else %}
-        <!-- Unauthenticated Public Shell (Home, Login, Register) -->
-        <div class="d-flex flex-column min-vh-100">
+        <!-- Unauthenticated Public Shell -->
+        <div class="tv-public-shell">
             {% include 'partials/navbar.html' %}
-            <main id="mainContent" class="flex-grow-1 py-4 tv-animate-fade" tabindex="-1">
-                <div class="container">
+            <main id="mainContent" class="tv-public-content" tabindex="-1">
+                <div class="container py-4">
                     {% include 'partials/messages.html' %}
     {% endif %}
 

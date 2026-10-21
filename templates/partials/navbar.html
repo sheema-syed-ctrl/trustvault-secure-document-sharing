@@ -5,7 +5,7 @@
             <div class="tv-brand-icon">
                 <i class="bi bi-shield-lock-fill"></i>
             </div>
-            <span>Trust<span class="text-primary">Vault</span></span>
+            <span>Trust<span class="tv-brand-accent">Vault</span></span>
         </a>
 
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#trustvaultPublicNav" aria-controls="trustvaultPublicNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,7 +22,8 @@
             <div class="d-flex align-items-center gap-2">
                 <!-- Theme Toggle Button -->
                 <button type="button" class="tv-theme-toggle me-2" id="tvThemeToggle" title="Toggle color theme" aria-label="Toggle color theme">
-                    <i class="bi bi-moon-stars-fill"></i>
+                    <i class="bi bi-sun-fill tv-theme-icon-light"></i>
+                    <i class="bi bi-moon-stars-fill tv-theme-icon-dark"></i>
                 </button>
 
                 <a href="{% url 'accounts:login' %}" class="tv-btn tv-btn-secondary tv-btn-sm">

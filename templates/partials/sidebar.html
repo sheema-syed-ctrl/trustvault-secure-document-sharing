@@ -1,11 +1,11 @@
 <!-- TrustVault Sidebar Component -->
 <aside class="tv-sidebar" id="tvSidebar" aria-label="Main Navigation">
     <div class="tv-sidebar-brand">
-        <a href="{% url 'core:home' %}" class="tv-brand-link">
+        <a href="{% url 'dashboard:index' %}" class="tv-brand-link">
             <div class="tv-brand-icon">
                 <i class="bi bi-shield-lock-fill"></i>
             </div>
-            <span>Trust<span class="text-primary">Vault</span></span>
+            <span>Trust<span class="tv-brand-accent">Vault</span></span>
         </a>
     </div>
 
@@ -26,7 +26,7 @@
 
         <!-- Document Owner Actions -->
         {% if user.is_owner_role %}
-            <div class="tv-nav-section-title">Document Operations</div>
+            <div class="tv-nav-section-title">Operations</div>
             <a href="{% url 'documents:upload' %}" class="tv-nav-item {% if request.resolver_match.url_name == 'upload' %}active{% endif %}" title="Upload New Confidential Document">
                 <i class="bi bi-cloud-arrow-up-fill"></i>
                 <span>Upload Document</span>
@@ -47,31 +47,15 @@
         {% endif %}
     </nav>
 
-    <!-- Sidebar Footer / User Profile & Logout -->
+    <!-- Sidebar Bottom / Security Compliance Badge -->
     <div class="tv-sidebar-footer">
-        <div class="tv-user-profile mb-2">
-            <div class="tv-user-avatar">
-                {{ user.username|make_list|first|upper }}
+        <div class="tv-sidebar-security-badge">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="tv-status-dot tv-status-dot-active"></span>
+                <span class="small fw-semibold" style="color: var(--tv-text-main); font-size: 11px;">Zero-Knowledge Isolation</span>
             </div>
-            <div class="tv-user-info">
-                <div class="tv-user-name" title="{{ user.username }}">{{ user.username }}</div>
-                <div class="tv-user-role">
-                    {% if user.role == 'ADMIN' %}
-                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-1.5 py-0.5" style="font-size: 10px;">Admin</span>
-                    {% elif user.role == 'OWNER' %}
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1.5 py-0.5" style="font-size: 10px;">Owner</span>
-                    {% else %}
-                        <span class="badge bg-info-subtle text-info border border-info-subtle px-1.5 py-0.5" style="font-size: 10px;">Viewer</span>
-                    {% endif %}
-                </div>
-            </div>
+            <div class="text-muted" style="font-size: 10px;">SHA-256 Audit Integrity</div>
         </div>
-        <form action="{% url 'accounts:logout' %}" method="post" class="m-0">
-            {% csrf_token %}
-            <button type="submit" class="tv-btn tv-btn-ghost tv-btn-sm w-100 justify-content-start text-danger" title="Sign out of TrustVault">
-                <i class="bi bi-box-arrow-right me-1"></i> Sign Out
-            </button>
-        </form>
     </div>
 </aside>
 <div class="tv-sidebar-backdrop" id="tvSidebarBackdrop" aria-hidden="true"></div>
