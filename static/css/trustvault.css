@@ -897,6 +897,51 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--tv-danger) !important;
 }
 
+.tv-btn-outline-danger {
+    background-color: transparent;
+    color: var(--tv-danger) !important;
+    border-color: var(--tv-danger);
+}
+
+.tv-btn-outline-danger:hover {
+    background-color: var(--tv-danger);
+    color: #ffffff !important;
+}
+
+/* --- TrustVault Alerts & Banners --- */
+.tv-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: var(--tv-radius-md);
+    border: 1px solid var(--tv-border-default);
+    background-color: var(--tv-bg-surface);
+    color: var(--tv-text-main);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.tv-alert-info {
+    background-color: var(--tv-info-bg);
+    border-color: rgba(66, 99, 235, 0.25);
+}
+
+.tv-alert-warning {
+    background-color: var(--tv-warning-bg);
+    border-color: rgba(245, 159, 0, 0.25);
+}
+
+.tv-alert-danger {
+    background-color: var(--tv-danger-bg);
+    border-color: rgba(240, 62, 62, 0.25);
+}
+
+.tv-alert-success {
+    background-color: var(--tv-success-bg);
+    border-color: rgba(18, 184, 134, 0.25);
+}
+
 /* Action Group in Tables */
 .tv-action-group {
     display: inline-flex;

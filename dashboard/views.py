@@ -75,6 +75,29 @@ def admin_dashboard_view(request):
     # Recent users
     recent_users = User.objects.order_by('-date_joined')[:5]
 
+    # Calculate role distribution for admin telemetry
+    total_for_pct = total_users if total_users > 0 else 1
+    role_distribution = [
+        {
+            'role': 'ADMIN',
+            'label': 'Administrators',
+            'count': admin_count,
+            'pct': round((admin_count / total_for_pct) * 100, 1),
+        },
+        {
+            'role': 'OWNER',
+            'label': 'Document Owners',
+            'count': owner_count,
+            'pct': round((owner_count / total_for_pct) * 100, 1),
+        },
+        {
+            'role': 'VIEWER',
+            'label': 'Viewers',
+            'count': viewer_count,
+            'pct': round((viewer_count / total_for_pct) * 100, 1),
+        },
+    ]
+
     context = {
         'total_users': total_users,
         'active_users': active_users,
@@ -82,6 +105,7 @@ def admin_dashboard_view(request):
         'admin_count': admin_count,
         'owner_count': owner_count,
         'viewer_count': viewer_count,
+        'role_distribution': role_distribution,
         'total_documents': total_documents,
         'total_permissions': total_permissions,
         'security_denial_count': security_denial_count,

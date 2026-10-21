@@ -2,13 +2,13 @@
 
 **Submission for Snovasys Fresher Hiring Challenge 2026**
 **Track:** Python / Django Backend & Fullstack Engineering
-**Primary Stack:** Python 3.13.7, Django 5.2.18, SQLite 3 / PostgreSQL 14+, Tailwind CSS, Vanilla JS
+**Primary Stack:** Python 3.13.7, Django 5.2.18, SQLite 3 / PostgreSQL 14+, Custom Design System, Bootstrap 5.3, Vanilla JS
 **Security Baseline:** OWASP ASVS Level 2, Zero-Trust Server-Side Authorization, STRIDE Threat Modeling
-**Test Coverage:** 277 Automated Tests (100% Pass Rate) | 0 Static Vulnerabilities (`bandit`, `pip-audit`)
+**Test Coverage:** 277 Automated Tests (100% Pass Rate) | 0 Production Vulnerabilities (`bandit`, `pip-audit`)
 
 ---
 
-## 1. Executive Summary
+## 1. Executive Summary & Value Proposition
 
 TrustVault is an enterprise-grade secure document-sharing platform engineered to satisfy rigorous corporate compliance, zero-trust confidentiality, and data integrity standards. Unlike conventional file-sharing applications that rely on static media URLs, loose access lists, and client-side access control, TrustVault treats security as a non-negotiable architectural invariant:
 
@@ -23,7 +23,30 @@ TrustVault is an enterprise-grade secure document-sharing platform engineered to
 
 ---
 
-## 2. 10 Challenge Requirements Compliance Matrix
+## 2. Verified Visual Application Walkthrough
+
+The following screens represent actual working interfaces captured from the local running application:
+
+| Document Owner Workspace | Administrator Control Center |
+|:---:|:---:|
+| ![Owner Dashboard](evidence/screenshots/screen_02_owner_dashboard.png) | ![Admin Dashboard](evidence/screenshots/screen_06_admin_dashboard.png) |
+| *Vault metrics, category cards, recent uploads & quick action controls* | *Global account metrics, role distribution & security denial alerts* |
+
+| Granular Access Control & Sharing | Immutable Global Audit Trail |
+|:---:|:---:|
+| ![Sharing & Access Control](evidence/screenshots/screen_05_permissions_manage.png) | ![Audit Trail Monitor](evidence/screenshots/screen_07_audit_trail.png) |
+| *Granular READ/EDIT assignment with instant revocation toggle* | *Filterable append-only audit stream with actor & status tracking* |
+
+| Viewer Shared Workspace | Security Boundary Violation (403) |
+|:---:|:---:|
+| ![Viewer Workspace](evidence/screenshots/screen_09_viewer_dashboard.png) | ![Access Denied 403](evidence/screenshots/screen_10_access_denied_403.png) |
+| *Authorized documents table reflecting exact READ vs EDIT privileges* | *Immediate enforcement trapping unauthorized or revoked file requests* |
+
+*Additional high-resolution walkthrough evidence is documented in [evidence/screenshots/WALKTHROUGH_EVIDENCE.md](evidence/screenshots/WALKTHROUGH_EVIDENCE.md).*
+
+---
+
+## 3. 10 Challenge Requirements Compliance Matrix
 
 | # | Challenge Requirement | Implementation Architecture | Verified Status |
 | :-: | :--- | :--- | :-: |
@@ -40,7 +63,7 @@ TrustVault is an enterprise-grade secure document-sharing platform engineered to
 
 ---
 
-## 3. Demo Credentials Reference
+## 4. Demo Accounts & Seeder Workflow
 
 TrustVault features a secure synthetic demo data seeder command:
 ```bash
@@ -48,7 +71,7 @@ python manage.py seed_demo_data --clean
 ```
 
 > [!NOTE]
-> In accordance with secure credential management best practices, passwords are **never hardcoded or committed to version control**. When `seed_demo_data` executes, high-entropy random passwords meeting all Django password validation criteria are dynamically generated and displayed exclusively in the terminal to the authorized operator. Alternatively, custom passwords can be specified via environment variables (`DEMO_ADMIN_PASSWORD`, `DEMO_OWNER_PASSWORD`, `DEMO_VIEWER_PASSWORD`).
+> In accordance with secure credential management best practices, passwords are **never hardcoded or committed to version control**. When `seed_demo_data` executes, high-entropy random passwords meeting all Django password validation criteria are dynamically generated and displayed in the terminal to the authorized operator. Alternatively, custom passwords can be specified via environment variables (`DEMO_ADMIN_PASSWORD`, `DEMO_OWNER_PASSWORD`, `DEMO_VIEWER_PASSWORD`).
 
 | Role | Username | Password Provisioning | Purpose & Access Boundary |
 | :--- | :--- | :--- | :--- |
@@ -58,17 +81,18 @@ python manage.py seed_demo_data --clean
 
 ---
 
-## 4. Local Quick Start Guide
+## 5. Local Quick Start Guide
 
 ### Prerequisites
 - Python 3.13+ installed (`python --version`)
-- Git installed
-- SQLite 3 (bundled) or PostgreSQL 14+
+- Git installed (`git --version`)
+- SQLite 3 (bundled default) or PostgreSQL 14+
 
 ### Installation Steps
 ```bash
 # 1. Clone repository and navigate to folder
-cd F:\Sheema
+git clone https://github.com/sheema-syed-ctrl/trustvault-secure-document-sharing.git
+cd trustvault-secure-document-sharing
 
 # 2. Create and activate virtual environment
 python -m venv venv
@@ -79,23 +103,26 @@ python -m venv venv
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# 4. Apply database migrations
+# 4. Copy environment template
+cp .env.example .env
+
+# 5. Apply database migrations
 python manage.py migrate
 
-# 5. Provision synthetic demo data
+# 6. Provision synthetic demo data
 python manage.py seed_demo_data --clean
 
-# 6. Run automated test suite
+# 7. Run automated test suite
 python manage.py test
 
-# 7. Start development server
+# 8. Start development server
 python manage.py runserver
 ```
-Navigate to `http://127.0.0.1:8000/` and sign in with any of the demo accounts above.
+Navigate to `http://127.0.0.1:8000/` and sign in with any of the demo accounts printed by the seeder.
 
 ---
 
-## 5. Security Architecture & Threat Defenses
+## 6. Security Architecture & Threat Defenses
 
 TrustVault implements a defense-in-depth security model:
 
@@ -119,7 +146,7 @@ flowchart TD
 
 ---
 
-## 6. Automated Testing Suite
+## 7. Automated Testing & Static Analysis
 
 TrustVault maintains a 100% passing automated test suite covering unit, integration, and security regression vectors:
 
@@ -129,7 +156,7 @@ OK
 System check identified no issues (0 silenced).
 ```
 
-### Breakdown by Module:
+### Automated Test Breakdown:
 - `accounts`: 28 tests (RBAC lifecycle, privilege escalation defenses, admin self-protection, dynamic demo seeder, production gates)
 - `core`: 42 tests (6 system architecture + 36 dedicated security regression tests)
 - `documents`: 71 tests (Upload validation, magic bytes, storage isolation, streaming, deletion, discovery)
@@ -142,20 +169,30 @@ Run the full suite:
 python manage.py test
 ```
 
-Run via Pytest:
-```bash
-pytest
-```
+### Static Analysis & Dependency Audits:
+- **Bandit (Production Code):** `bandit -r accounts audit core dashboard documents permissions trustvault -x "*/tests.py,*/*test*.py"`
+  Result: **0 issues identified** (No High, Medium, or Low findings).
+- **Pip-Audit (Dependencies):** `pip-audit`
+  Result: **No known vulnerabilities found** (All dependencies patched including `certifi>=2026.10.19`).
 
 ---
 
-## 7. Project Documentation Index
+## 8. Deployment Status & Deliverables Notice
 
-- [ARCHITECTURE.md](file:///f:/Sheema/ARCHITECTURE.md) — Comprehensive architectural specification and design patterns
-- [THREATS.md](file:///f:/Sheema/THREATS.md) — STRIDE Threat Model covering 15 threat vectors with mitigations
-- [SECURITY_CHECKLIST.md](file:///f:/Sheema/SECURITY_CHECKLIST.md) — 18 security domains, 48 verified controls (100% Pass)
-- [PROMPTS.md](file:///f:/Sheema/PROMPTS.md) — Mandatory AI prompt history and architectural decision logs
-- [API_DOCUMENTATION.md](file:///f:/Sheema/API_DOCUMENTATION.md) — Complete REST/HTTP endpoint catalog and security specs
-- [DATABASE_SCHEMA.md](file:///f:/Sheema/DATABASE_SCHEMA.md) — Relational schema diagrams, tables, fields, constraints
-- [SETUP.md](file:///f:/Sheema/SETUP.md) — Developer setup and onboarding instructions
-- [DEPLOYMENT.md](file:///f:/Sheema/DEPLOYMENT.md) — Production deployment instructions for Render, Railway, Docker
+- **Cloud Deployment Readiness:** TrustVault includes complete production deployment configurations for Render ([render.yaml](render.yaml)), Heroku/Railway ([Procfile](Procfile)), and Linux containers ([build.sh](build.sh)). Production settings enforce `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, and `X-Content-Type-Options: nosniff`.
+  *Note: A live public cloud instance is kept dormant prior to evaluator review to avoid unmonitored cloud hosting charges; the project is 100% operational locally via the steps above.*
+- **Demo Walkthrough Video:** A comprehensive, structured 5-minute video walkthrough script is provided in [DEMO_SCRIPT.md](DEMO_SCRIPT.md) covering all evaluator grading rubrics.
+
+---
+
+## 9. Project Documentation Index
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — Comprehensive architectural specification and design patterns
+- [THREATS.md](THREATS.md) — STRIDE Threat Model covering 15 threat vectors with mitigations
+- [SECURITY_CHECKLIST.md](SECURITY_CHECKLIST.md) — 18 security domains, 48 verified controls (100% Pass)
+- [PROMPTS.md](PROMPTS.md) — Mandatory AI prompt history and architectural decision logs
+- [API_DOCUMENTATION.md](API_DOCUMENTATION.md) — Complete REST/HTTP endpoint catalog and security specs
+- [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) — Relational schema diagrams, tables, fields, constraints
+- [SETUP.md](SETUP.md) — Developer setup and onboarding instructions
+- [DEPLOYMENT.md](DEPLOYMENT.md) — Production deployment instructions for Render, Railway, Docker
+- [DEMO_SCRIPT.md](DEMO_SCRIPT.md) — Detailed 5-minute role-by-role live presentation script
