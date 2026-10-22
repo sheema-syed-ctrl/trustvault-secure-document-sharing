@@ -10,11 +10,19 @@
 
 ## 🎬 TrustVault — Product Launch Video
 
-[![TrustVault — Product Launch Video](brag-output-2026-10-22-131630/brag.jpg)](brag-output-2026-10-22-131630/brag.mp4)
+https://github.com/user-attachments/assets/b402250b-fbf4-4fe4-8752-e1a576cc4c93
 
-> **[▶ Watch the Full 25-Second Product Launch Video](brag-output-2026-10-22-131630/brag.mp4)**
+> **[▶ Direct Video Stream](https://github.com/user-attachments/assets/b402250b-fbf4-4fe4-8752-e1a576cc4c93)** | **[Local Repository File](brag-output-2026-10-22-131630/brag.mp4)**
 >
 > A 25-second cinematic product walkthrough showcasing TrustVault's core capabilities in action: secure document management, three-tier role-based access control (`ADMIN`, `OWNER`, `VIEWER`), granular named-user permissions (`READ` vs `EDIT`), instant access revocation, server-side authorization, and the immutable real-time audit trail.
+
+<details>
+<summary><b>🖼️ View Poster Thumbnail Fallback</b></summary>
+<br>
+
+[![TrustVault — Product Launch Video Thumbnail](https://github.com/user-attachments/assets/9321317e-ea59-4e7b-b0ca-2c361da4f42c)](brag-output-2026-10-22-131630/brag.mp4)
+
+</details>
 
 ---
 
