@@ -1,0 +1,1223 @@
+{
+  "ok": true,
+  "strict": false,
+  "browserSkipped": false,
+  "lint": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "filesScanned": 6
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "duration": 25,
+    "samples": [
+      1.389,
+      4.167,
+      6.944,
+      9.722,
+      12.5,
+      15.278,
+      18.056,
+      20.833,
+      23.611
+    ],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 0,
+    "truncated": false
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": false,
+    "samples": 0
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "samples": [
+      1.389,
+      6.944,
+      12.5,
+      18.056,
+      23.611
+    ],
+    "checked": 123,
+    "passed": 123
+  },
+  "craft": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 12,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 2 text elements stay under it for 0.5 s or more, the smallest \"ZERO-TRUST STORAGE ENGINE\" at 13 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "ZERO-TRUST STORAGE ENGINE",
+        "selector": "div.nav-badge > span:nth-of-type(2)",
+        "dataAttributes": {},
+        "sourceFile": "index.html",
+        "bbox": {
+          "x": 1630,
+          "y": 61.5,
+          "width": 195,
+          "height": 17
+        },
+        "time": 0,
+        "times": [
+          0,
+          0
+        ],
+        "fontPx": 13,
+        "floorPx": 28,
+        "seconds": 24.75,
+        "elements": [
+          {
+            "selector": "div.nav-badge > span:nth-of-type(2)",
+            "text": "ZERO-TRUST STORAGE ENGINE",
+            "fontPx": 13,
+            "time": 0,
+            "seconds": 24.75
+          },
+          {
+            "selector": "div.brand-title",
+            "text": "TRUSTVAULT",
+            "fontPx": 24,
+            "time": 0,
+            "seconds": 24.75
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 8 text elements stay under it for 0.5 s or more, the smallest \"CRITICAL SECURITY VULNERABILITY\" at 13 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "CRITICAL SECURITY VULNERABILITY",
+        "selector": "#s1-pill > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/scene1.html",
+        "bbox": {
+          "x": 845.33,
+          "y": 325.93,
+          "width": 251.34,
+          "height": 16
+        },
+        "time": 0.25,
+        "times": [
+          0.25,
+          0.75,
+          1,
+          1,
+          1.25,
+          1.25,
+          1.375,
+          1.375
+        ],
+        "fontPx": 12.85,
+        "floorPx": 28,
+        "seconds": 3.75,
+        "elements": [
+          {
+            "selector": "#s1-pill > span:nth-of-type(1)",
+            "text": "CRITICAL SECURITY VULNERABILITY",
+            "fontPx": 12.85,
+            "time": 0.25,
+            "seconds": 3.75
+          },
+          {
+            "selector": "div.threat-grid > div:nth-of-type(1) > div:nth-of-type(3)",
+            "text": "Direct file paths mapped to media directories bypass application authorization checks entirely.",
+            "fontPx": 14.82,
+            "time": 1,
+            "seconds": 3
+          },
+          {
+            "selector": "div.threat-grid > div:nth-of-type(2) > div:nth-of-type(3)",
+            "text": "Platform administrators routinely retain unconstrained access to inspect confidential executive files.",
+            "fontPx": 14.82,
+            "time": 1.25,
+            "seconds": 2.75
+          },
+          {
+            "selector": "div.threat-grid > div:nth-of-type(3) > div:nth-of-type(3)",
+            "text": "Permission revocations are delayed or ignored by cached endpoints, leaving revoked users in possession of data.",
+            "fontPx": 14.82,
+            "time": 1.375,
+            "seconds": 2.625
+          },
+          {
+            "selector": "div.threat-grid > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "Unprotected Static URLs",
+            "fontPx": 19.76,
+            "time": 1,
+            "seconds": 3
+          },
+          {
+            "selector": "div.threat-grid > div:nth-of-type(2) > div:nth-of-type(2)",
+            "text": "Excessive Admin Snooping",
+            "fontPx": 19.76,
+            "time": 1.25,
+            "seconds": 2.75
+          },
+          {
+            "selector": "div.threat-grid > div:nth-of-type(3) > div:nth-of-type(2)",
+            "text": "Ghost Permission Drift",
+            "fontPx": 19.76,
+            "time": 1.375,
+            "seconds": 2.625
+          },
+          {
+            "selector": "#s1-subheading",
+            "text": "Conventional file sharing relies on unprotected static URLs, broad administrator privileges, and non-existent audit trails.",
+            "fontPx": 23.71,
+            "time": 0.75,
+            "seconds": 3.25
+          }
+        ]
+      },
+      {
+        "code": "line_unread",
+        "severity": "warning",
+        "message": "\"Conventional file sharing relies on unprotected static UR...\" (16 words) is on screen 3.23 s (±0.01 s), under its 3.97 s floor: hold it about 0.5 s + 0.3 s a word (5.30 s here) before it leaves or changes; see references/motion.md.",
+        "text": "Conventional file sharing relies on unprotected static URLs, broad administrator privileges, and non-existent audit trails.",
+        "selector": "#s1-subheading",
+        "dataAttributes": {},
+        "sourceFile": "compositions/scene1.html",
+        "bbox": {
+          "x": 448.84,
+          "y": 477.32,
+          "width": 1022.3200000000002,
+          "height": 63.79000000000002
+        },
+        "time": 0.703,
+        "words": 16,
+        "seconds": 3.234,
+        "floorSeconds": 3.975
+      },
+      {
+        "code": "line_unread",
+        "severity": "warning",
+        "message": "\"Direct file paths mapped to media directories bypass appl...\" (12 words) is on screen 2.94 s (±0.01 s), under its 3.07 s floor: hold it about 0.5 s + 0.3 s a word (4.10 s here) before it leaves or changes; see references/motion.md.",
+        "text": "Direct file paths mapped to media directories bypass application authorization checks entirely.",
+        "selector": "div.threat-grid > div:nth-of-type(1) > div:nth-of-type(3)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/scene1.html",
+        "bbox": {
+          "x": 289,
+          "y": 735.05,
+          "width": 373.6600000000001,
+          "height": 41.5
+        },
+        "time": 1,
+        "words": 12,
+        "seconds": 2.938,
+        "floorSeconds": 3.075
+      },
+      {
+        "code": "line_unread",
+        "severity": "warning",
+        "message": "\"Platform administrators routinely retain unconstrained ac...\" (11 words) is on screen 2.77 s (±0.01 s), under its 2.85 s floor: hold it about 0.5 s + 0.3 s a word (3.80 s here) before it leaves or changes; see references/motion.md.",
+        "text": "Platform administrators routinely retain unconstrained access to inspect confidential executive files.",
+        "selector": "div.threat-grid > div:nth-of-type(2) > div:nth-of-type(3)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/scene1.html",
+        "bbox": {
+          "x": 765,
+          "y": 725.03,
+          "width": 380.3399999999999,
+          "height": 41.5
+        },
+        "time": 1.172,
+        "words": 11,
+        "seconds": 2.766,
+        "floorSeconds": 2.85
+      },
+      {
+        "code": "line_unread",
+        "severity": "warning",
+        "message": "\"Permission revocations are delayed or ignored by cached e...\" (16 words) is on screen 2.63 s (±0.01 s), under its 3.97 s floor: hold it about 0.5 s + 0.3 s a word (5.30 s here) before it leaves or changes; see references/motion.md.",
+        "text": "Permission revocations are delayed or ignored by cached endpoints, leaving revoked users in possession of data.",
+        "selector": "div.threat-grid > div:nth-of-type(3) > div:nth-of-type(3)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/scene1.html",
+        "bbox": {
+          "x": 1241,
+          "y": 726.56,
+          "width": 350.3600000000001,
+          "height": 64
+        },
+        "time": 1.305,
+        "words": 16,
+        "seconds": 2.633,
+        "floorSeconds": 3.975
+      },
+      {
+        "code": "line_unread",
+        "severity": "warning",
+        "message": "\"Files are isolated in under cryptographic UUIDs. Never ex...\" (21 words) is on screen 3.94 s (±0.01 s), under its 5.10 s floor: hold it about 0.5 s + 0.3 s a word (6.80 s here) before it leaves or changes; see references/motion.md.",
+        "text": "Files are isolated in under cryptographic UUIDs. Never exposed as direct URLs. Every byte streamed through server-side authorization. protected_media/",
+        "selector": "#s2-subheading",
+        "dataAttributes": {},
+        "sourceFile": "compositions/scene2.html",
+        "bbox": {
+          "x": 442.2,
+          "y": 395.93,
+          "width": 1035.6,
+          "height": 63.79000000000002
+        },
+        "time": 4.5,
+        "words": 21,
+        "seconds": 3.938,
+        "floorSeconds": 5.1
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 26 text elements stay under it for 0.5 s or more, the smallest \"AUTHENTICATED: OWNER\" at 12 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "AUTHENTICATED: OWNER",
+        "selector": "div.status-pill.status-active",
+        "dataAttributes": {},
+        "sourceFile": "compositions/scene2.html",
+        "bbox": {
+          "x": 1455.25,
+          "y": 537.74,
+          "width": 142.63,
+          "height": 15.85
+        },
+        "time": 4.75,
+        "times": [
+          4.25,
+          4.5,
+          4.5,
+          4.75,
+          4.75,
+          4.75,
+          4.75,
+          4.75,
+          4.75,
+          4.75,
+          4.75,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5.25,
+          5.25,
+          5.25,
+          5.25,
+          5.25,
+          5.375,
+          5.375,
+          5.375,
+          5.375,
+          5.375
+        ],
+        "fontPx": 11.89,
+        "floorPx": 28,
+        "seconds": 3.75,
+        "elements": [
+          {
+            "selector": "div.status-pill.status-active",
+            "text": "AUTHENTICATED: OWNER",
+            "fontPx": 11.89,
+            "time": 4.75,
+            "seconds": 3.75
+          },
+          {
+            "selector": "table.vault-inventory-table > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(1)",
+            "text": "Document Title & UUID Storage Reference",
+            "fontPx": 11.89,
+            "time": 4.75,
+            "seconds": 3.75
+          },
+          {
+            "selector": "table.vault-inventory-table > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(2)",
+            "text": "Category",
+            "fontPx": 11.89,
+            "time": 4.75,
+            "seconds": 3.75
+          },
+          {
+            "selector": "table.vault-inventory-table > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(3)",
+            "text": "Size",
+            "fontPx": 11.89,
+            "time": 4.75,
+            "seconds": 3.75
+          },
+          {
+            "selector": "table.vault-inventory-table > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(4)",
+            "text": "Access Policy",
+            "fontPx": 11.89,
+            "time": 4.75,
+            "seconds": 3.75
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2)",
+            "text": "protected_media/d8b8e84a-7142-4b2a-a9e1.bin",
+            "fontPx": 12,
+            "time": 5,
+            "seconds": 3.5
+          },
+          {
+            "selector": "span.category-badge.cat-tech",
+            "text": "TECHNICAL",
+            "fontPx": 12,
+            "time": 5,
+            "seconds": 3.5
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(1) > td:nth-of-type(4) > span:nth-of-type(1)",
+            "text": "PROTECTED",
+            "fontPx": 12,
+            "time": 5,
+            "seconds": 3.5
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(2) > td:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2)",
+            "text": "protected_media/4f19b22a-e831-419b-b0cc.bin",
+            "fontPx": 12,
+            "time": 5.25,
+            "seconds": 3.25
+          },
+          {
+            "selector": "span.category-badge.cat-legal",
+            "text": "LEGAL",
+            "fontPx": 12,
+            "time": 5.25,
+            "seconds": 3.25
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(2) > td:nth-of-type(4) > span:nth-of-type(1)",
+            "text": "PROTECTED",
+            "fontPx": 12,
+            "time": 5.25,
+            "seconds": 3.25
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(3) > td:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2)",
+            "text": "protected_media/9a37c10b-1142-491a-9f55.bin",
+            "fontPx": 12,
+            "time": 5.375,
+            "seconds": 3.125
+          },
+          {
+            "selector": "span.category-badge.cat-fin",
+            "text": "FINANCIAL",
+            "fontPx": 12,
+            "time": 5.375,
+            "seconds": 3.125
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(3) > td:nth-of-type(4) > span:nth-of-type(1)",
+            "text": "PROTECTED",
+            "fontPx": 12,
+            "time": 5.375,
+            "seconds": 3.125
+          },
+          {
+            "selector": "div.vault-footer-strip > span:nth-of-type(1)",
+            "text": "• Binary Magic-Byte Signature Verification Active",
+            "fontPx": 12.88,
+            "time": 4.75,
+            "seconds": 3.75
+          },
+          {
+            "selector": "div.vault-footer-strip > span:nth-of-type(2)",
+            "text": "Path Traversal Defenses: STRICT IS_RELATIVE_TO",
+            "fontPx": 12.88,
+            "time": 4.75,
+            "seconds": 3.75
+          },
+          {
+            "selector": "#s2-pill > span:nth-of-type(1)",
+            "text": "ENTERPRISE DOCUMENT VAULT",
+            "fontPx": 13,
+            "time": 4.25,
+            "seconds": 4.25
+          },
+          {
+            "selector": "div.vault-window-title",
+            "text": "workspace/owner_demo/vault_inventory",
+            "fontPx": 13.87,
+            "time": 4.75,
+            "seconds": 3.75
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(1) > td:nth-of-type(3)",
+            "text": "214 B",
+            "fontPx": 15,
+            "time": 5,
+            "seconds": 3.5
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(2) > td:nth-of-type(3)",
+            "text": "214 B",
+            "fontPx": 15,
+            "time": 5.25,
+            "seconds": 3.25
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(3) > td:nth-of-type(3)",
+            "text": "178 B",
+            "fontPx": 15,
+            "time": 5.375,
+            "seconds": 3.125
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(1) > td:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1)",
+            "text": "TrustVault Architecture Spec",
+            "fontPx": 16,
+            "time": 5,
+            "seconds": 3.5
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(2) > td:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1)",
+            "text": "Enterprise Security Audit",
+            "fontPx": 16,
+            "time": 5.25,
+            "seconds": 3.25
+          },
+          {
+            "selector": "table.vault-inventory-table > tbody:nth-of-type(1) > tr:nth-of-type(3) > td:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1)",
+            "text": "Board Resolution Q3 2026",
+            "fontPx": 16,
+            "time": 5.375,
+            "seconds": 3.125
+          },
+          {
+            "selector": "#s2-subheading",
+            "text": "Files are isolated in under cryptographic UUIDs. Never exposed as direct URLs. Every byte streamed through server-side authorization.",
+            "fontPx": 24,
+            "time": 4.5,
+            "seconds": 4
+          },
+          {
+            "selector": "#s2-subheading > strong:nth-of-type(1)",
+            "text": "protected_media/",
+            "fontPx": 24,
+            "time": 4.5,
+            "seconds": 4
+          }
+        ]
+      },
+      {
+        "code": "line_unread",
+        "severity": "warning",
+        "message": "\"Three explicit personas. Owners grant granular and rights...\" (21 words) is on screen 4.94 s (±0.01 s), under its 5.10 s floor: hold it about 0.5 s + 0.3 s a word (6.80 s here) before it leaves or changes; see references/motion.md.",
+        "text": "Three explicit personas. Owners grant granular and rights to specific users. Instant revocation cuts access across all streaming endpoints. READ EDIT",
+        "selector": "#s3-subheading",
+        "dataAttributes": {},
+        "sourceFile": "compositions/scene3.html",
+        "bbox": {
+          "x": 466.3,
+          "y": 383.77,
+          "width": 987.3900000000001,
+          "height": 63.80000000000001
+        },
+        "time": 9,
+        "words": 21,
+        "seconds": 4.938,
+        "floorSeconds": 5.1
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 27 text elements stay under it for 0.5 s or more, the smallest \"ADMIN\" at 11 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "ADMIN",
+        "selector": "span.persona-badge.badge-admin",
+        "dataAttributes": {},
+        "sourceFile": "compositions/scene3.html",
+        "bbox": {
+          "x": 288.77,
+          "y": 572.22,
+          "width": 33,
+          "height": 14
+        },
+        "time": 9.25,
+        "times": [
+          8.5,
+          8.75,
+          9,
+          9,
+          9,
+          9.25,
+          9.25,
+          9.25,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.375,
+          9.5,
+          9.5,
+          9.5
+        ],
+        "fontPx": 10.87,
+        "floorPx": 28,
+        "seconds": 4.75,
+        "elements": [
+          {
+            "selector": "span.persona-badge.badge-admin",
+            "text": "ADMIN",
+            "fontPx": 10.87,
+            "time": 9.25,
+            "seconds": 4.75
+          },
+          {
+            "selector": "span.persona-badge.badge-owner",
+            "text": "OWNER",
+            "fontPx": 10.87,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "span.persona-badge.badge-viewer",
+            "text": "VIEWER",
+            "fontPx": 10.87,
+            "time": 9.5,
+            "seconds": 4.5
+          },
+          {
+            "selector": "span.perm-pill.perm-read",
+            "text": "PERMISSION: READ",
+            "fontPx": 11.86,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "#perm-status-badge",
+            "text": "ACTIVE GRANT",
+            "fontPx": 11.86,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "span.perm-pill.perm-edit",
+            "text": "PERMISSION: EDIT",
+            "fontPx": 11.86,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "div.permissions-interface > div:nth-of-type(3) > div:nth-of-type(2) > span:nth-of-type(2)",
+            "text": "ACTIVE GRANT",
+            "fontPx": 11.86,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "div.permissions-interface > div:nth-of-type(4) > span:nth-of-type(1)",
+            "text": "Dynamic Request-Level Authorization",
+            "fontPx": 11.86,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "div.permissions-interface > div:nth-of-type(4) > span:nth-of-type(2)",
+            "text": "Zero Cached Permission Drift",
+            "fontPx": 11.86,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "#revoke-action-btn > span:nth-of-type(1)",
+            "text": "REVOKE ACCESS",
+            "fontPx": 11.96,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "div.personas-card > div:nth-of-type(1)",
+            "text": "3 Discrete Personas",
+            "fontPx": 12.85,
+            "time": 8.5,
+            "seconds": 5.5
+          },
+          {
+            "selector": "#s3-pill > span:nth-of-type(1)",
+            "text": "STRICT OBJECT-LEVEL RBAC",
+            "fontPx": 12.85,
+            "time": 8.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "div.personas-card > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "Governs accounts & audit logs. Document downloads strictly suppressed for zero eavesdropping.",
+            "fontPx": 12.85,
+            "time": 9.25,
+            "seconds": 4.75
+          },
+          {
+            "selector": "div.personas-card > div:nth-of-type(3) > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "Full upload, metadata edit, permission delegation & revocation authority.",
+            "fontPx": 12.85,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "div.permissions-interface > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "Controlled by owner_demo • Target: Financial Confidential",
+            "fontPx": 12.85,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "span.nav-badge",
+            "text": "PERMISSION ENGINE",
+            "fontPx": 12.85,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "div.perm-row > div:nth-of-type(2) > span:nth-of-type(3)",
+            "text": "SCOPED",
+            "fontPx": 12.85,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "div.personas-card > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(2)",
+            "text": "Strictly limited to explicitly granted files with READ or EDIT capabilities.",
+            "fontPx": 12.85,
+            "time": 9.5,
+            "seconds": 4.5
+          },
+          {
+            "selector": "div.personas-card > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1)",
+            "text": "Administrator",
+            "fontPx": 14.82,
+            "time": 9.25,
+            "seconds": 4.75
+          },
+          {
+            "selector": "div.personas-card > div:nth-of-type(3) > div:nth-of-type(1) > div:nth-of-type(1)",
+            "text": "Document Owner",
+            "fontPx": 14.82,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "div.personas-card > div:nth-of-type(4) > div:nth-of-type(1) > div:nth-of-type(1)",
+            "text": "Authorized Viewer",
+            "fontPx": 14.82,
+            "time": 9.5,
+            "seconds": 4.5
+          },
+          {
+            "selector": "div.permissions-interface > div:nth-of-type(2) > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "viewer_demo",
+            "fontPx": 15.81,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "div.permissions-interface > div:nth-of-type(3) > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "auditor_external",
+            "fontPx": 15.81,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "div.permissions-interface > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1)",
+            "text": "Share Settings: Board Resolution Q3 2026",
+            "fontPx": 17.79,
+            "time": 9.375,
+            "seconds": 4.625
+          },
+          {
+            "selector": "#s3-subheading",
+            "text": "Three explicit personas. Owners grant granular and rights to specific users. Instant revocation cuts access across all streaming endpoints.",
+            "fontPx": 23.71,
+            "time": 9,
+            "seconds": 5
+          },
+          {
+            "selector": "#s3-subheading > strong:nth-of-type(1)",
+            "text": "READ",
+            "fontPx": 23.71,
+            "time": 9,
+            "seconds": 5
+          },
+          {
+            "selector": "#s3-subheading > strong:nth-of-type(2)",
+            "text": "EDIT",
+            "fontPx": 23.71,
+            "time": 9,
+            "seconds": 5
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 43 text elements stay under it for 0.5 s or more, the smallest \"ACCESS_DENIED\" at 11 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "ACCESS_DENIED",
+        "selector": "span.event-badge.event-denied",
+        "dataAttributes": {},
+        "sourceFile": "compositions/scene4.html",
+        "bbox": {
+          "x": 1087.4,
+          "y": 648.38,
+          "width": 85.81,
+          "height": 14
+        },
+        "time": 15.125,
+        "times": [
+          14.25,
+          14.5,
+          14.75,
+          14.75,
+          14.75,
+          14.75,
+          14.75,
+          14.75,
+          14.75,
+          14.75,
+          14.75,
+          14.75,
+          14.75,
+          14.75,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125,
+          15.125
+        ],
+        "fontPx": 11,
+        "floorPx": 28,
+        "seconds": 4.875,
+        "elements": [
+          {
+            "selector": "span.event-badge.event-denied",
+            "text": "ACCESS_DENIED",
+            "fontPx": 11,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "span.event-badge.event-revoked",
+            "text": "PERM_REVOKED",
+            "fontPx": 11,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "span.event-badge.event-granted",
+            "text": "PERM_GRANTED",
+            "fontPx": 11,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "span.event-badge.event-uploaded",
+            "text": "DOC_UPLOADED",
+            "fontPx": 11,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "div.violation-meta > div:nth-of-type(5)",
+            "text": "• Incident logged to immutable audit trail permanently.",
+            "fontPx": 11.85,
+            "time": 14.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "div.audit-card-header > span:nth-of-type(1)",
+            "text": "APPEND-ONLY ORM",
+            "fontPx": 12,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "table.audit-table > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(1)",
+            "text": "Timestamp (UTC)",
+            "fontPx": 12,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "table.audit-table > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(2)",
+            "text": "Event Type",
+            "fontPx": 12,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "table.audit-table > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(3)",
+            "text": "Actor",
+            "fontPx": 12,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "table.audit-table > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(4)",
+            "text": "Target Resource",
+            "fontPx": 12,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "table.audit-table > thead:nth-of-type(1) > tr:nth-of-type(1) > th:nth-of-type(5)",
+            "text": "Status",
+            "fontPx": 12,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#s4-audit > div:nth-of-type(2) > span:nth-of-type(1)",
+            "text": "AuditQuerySet Blocks Bulk Update & Deletion",
+            "fontPx": 12,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#s4-audit > div:nth-of-type(2) > span:nth-of-type(2)",
+            "text": "Tamper-Resistant Log",
+            "fontPx": 12,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "div.violation-meta > div:nth-of-type(1)",
+            "text": "Event Code:",
+            "fontPx": 12.84,
+            "time": 14.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "div.violation-meta > div:nth-of-type(1) > strong:nth-of-type(1)",
+            "text": "SEC-AUTH-403",
+            "fontPx": 12.84,
+            "time": 14.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "div.violation-meta > div:nth-of-type(2)",
+            "text": "Actor: (Access Revoked)",
+            "fontPx": 12.84,
+            "time": 14.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "div.violation-meta > div:nth-of-type(2) > strong:nth-of-type(1)",
+            "text": "viewer_demo",
+            "fontPx": 12.84,
+            "time": 14.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "div.violation-meta > div:nth-of-type(3)",
+            "text": "Target:",
+            "fontPx": 12.84,
+            "time": 14.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "div.violation-meta > div:nth-of-type(3) > strong:nth-of-type(1)",
+            "text": "Board Resolution Q3 2026",
+            "fontPx": 12.84,
+            "time": 14.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "div.violation-meta > div:nth-of-type(4)",
+            "text": "Enforcement:",
+            "fontPx": 12.84,
+            "time": 14.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "div.violation-meta > div:nth-of-type(4) > strong:nth-of-type(1)",
+            "text": "Server-Side Dynamic Gate",
+            "fontPx": 12.84,
+            "time": 14.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "#s4-pill > span:nth-of-type(1)",
+            "text": "REAL-TIME INCIDENT ENFORCEMENT",
+            "fontPx": 13,
+            "time": 14.25,
+            "seconds": 5.75
+          },
+          {
+            "selector": "div.audit-card-header > div:nth-of-type(1) > span:nth-of-type(1)",
+            "text": "GLOBAL AUDIT STREAM (READ-ONLY)",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-1 > td:nth-of-type(1)",
+            "text": "2026-10-19 21:01:25",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-1 > td:nth-of-type(3)",
+            "text": "viewer_demo",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-1 > td:nth-of-type(4)",
+            "text": "Board Resolution.txt",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-1 > td:nth-of-type(5)",
+            "text": "FAILURE",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-2 > td:nth-of-type(1)",
+            "text": "2026-10-19 21:01:25",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-2 > td:nth-of-type(3)",
+            "text": "owner_demo",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-2 > td:nth-of-type(4)",
+            "text": "Board Resolution.txt",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-2 > td:nth-of-type(5)",
+            "text": "SUCCESS",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-3 > td:nth-of-type(1)",
+            "text": "2026-10-19 21:01:24",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-3 > td:nth-of-type(3)",
+            "text": "owner_demo",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-3 > td:nth-of-type(4)",
+            "text": "Security Audit.pdf",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-3 > td:nth-of-type(5)",
+            "text": "SUCCESS",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-4 > td:nth-of-type(1)",
+            "text": "2026-10-19 21:01:24",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-4 > td:nth-of-type(3)",
+            "text": "owner_demo",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-4 > td:nth-of-type(4)",
+            "text": "Architecture Spec.pdf",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "#audit-row-4 > td:nth-of-type(5)",
+            "text": "SUCCESS",
+            "fontPx": 14,
+            "time": 15.125,
+            "seconds": 4.875
+          },
+          {
+            "selector": "div.violation-msg",
+            "text": "You do not have authorization to access or download this document resource.",
+            "fontPx": 14.81,
+            "time": 14.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "div.violation-msg > strong:nth-of-type(1)",
+            "text": "Security Policy Violation:",
+            "fontPx": 14.81,
+            "time": 14.75,
+            "seconds": 5.25
+          },
+          {
+            "selector": "#s4-subheading",
+            "text": "Revocation immediately terminates streaming access. Security violations trigger HTTP 403 and are permanently logged in the append-only ledger.",
+            "fontPx": 24,
+            "time": 14.5,
+            "seconds": 5.5
+          },
+          {
+            "selector": "div.violation-code",
+            "text": "HTTP 403 — ACCESS DENIED",
+            "fontPx": 25.68,
+            "time": 14.75,
+            "seconds": 5.25
+          }
+        ]
+      },
+      {
+        "code": "text_below_floor",
+        "severity": "warning",
+        "message": "Type floor is 28 px (2.6% of the 1080 px short side, what a phone can read) and 4 text elements stay under it for 0.5 s or more, the smallest \"Zero-Trust Protected Media\" at 14 px: set reading text to at least 28 px, or put data-layout-ignore on text that is texture rather than reading; see references/look.md.",
+        "text": "Zero-Trust Protected Media",
+        "selector": "#s5-pills > div:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/scene5.html",
+        "bbox": {
+          "x": 578.58,
+          "y": 704.45,
+          "width": 218.4,
+          "height": 18
+        },
+        "time": 22,
+        "times": [
+          22,
+          22,
+          22,
+          22.625
+        ],
+        "fontPx": 14,
+        "floorPx": 28,
+        "seconds": 2.75,
+        "elements": [
+          {
+            "selector": "#s5-pills > div:nth-of-type(1)",
+            "text": "Zero-Trust Protected Media",
+            "fontPx": 14,
+            "time": 22,
+            "seconds": 2.75
+          },
+          {
+            "selector": "#s5-pills > div:nth-of-type(2)",
+            "text": "Strict Object-Level RBAC",
+            "fontPx": 14,
+            "time": 22,
+            "seconds": 2.75
+          },
+          {
+            "selector": "#s5-pills > div:nth-of-type(3)",
+            "text": "Immutable Append-Only Audit",
+            "fontPx": 14,
+            "time": 22,
+            "seconds": 2.75
+          },
+          {
+            "selector": "#s5-credits",
+            "text": "Snovasys Fresher Hiring Challenge 2026 • Python / Django Backend & Fullstack Track",
+            "fontPx": 15,
+            "time": 22.625,
+            "seconds": 2.125
+          }
+        ]
+      }
+    ],
+    "enabled": true,
+    "step": 0.125,
+    "samples": 200
+  },
+  "hdr": {
+    "autoPromotion": null,
+    "inspection": "available"
+  },
+  "snapshots": {
+    "enabled": false,
+    "files": [],
+    "times": [],
+    "findingFiles": []
+  }
+}

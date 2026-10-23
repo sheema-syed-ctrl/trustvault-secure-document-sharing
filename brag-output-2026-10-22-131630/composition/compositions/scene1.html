@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <link rel="stylesheet" href="common.css" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      .threat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 28px;
+        width: 100%;
+        max-width: 1400px;
+      }
+
+      .threat-card {
+        background: var(--tv-bg-surface);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        border-radius: 16px;
+        padding: 32px 28px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .threat-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f87171;
+        font-size: 22px;
+      }
+
+      .threat-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #f8fafc;
+      }
+
+      .threat-desc {
+        font-size: 15px;
+        line-height: 1.5;
+        color: var(--tv-text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="scene1"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="s1-pill" class="tv-pill pill-danger">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>CRITICAL SECURITY VULNERABILITY</span>
+      </div>
+
+      <h1 id="s1-heading" class="hero-heading">
+        Sensitive Documents Exposed.
+      </h1>
+
+      <p id="s1-subheading" class="hero-subheading">
+        Conventional file sharing relies on unprotected static URLs, broad administrator privileges, and non-existent audit trails.
+      </p>
+
+      <div class="threat-grid">
+        <div class="threat-card s1-card">
+          <div class="threat-icon-box">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
+          <div class="threat-title">Unprotected Static URLs</div>
+          <div class="threat-desc">Direct file paths mapped to media directories bypass application authorization checks entirely.</div>
+        </div>
+
+        <div class="threat-card s1-card">
+          <div class="threat-icon-box">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="threat-title">Excessive Admin Snooping</div>
+          <div class="threat-desc">Platform administrators routinely retain unconstrained access to inspect confidential executive files.</div>
+        </div>
+
+        <div class="threat-card s1-card">
+          <div class="threat-icon-box">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          </div>
+          <div class="threat-title">Ghost Permission Drift</div>
+          <div class="threat-desc">Permission revocations are delayed or ignored by cached endpoints, leaving revoked users in possession of data.</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["scene1"] = tl;
+
+      tl.fromTo("#s1-pill", { opacity: 0, y: -15 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 0.1);
+      tl.fromTo("#s1-heading", { opacity: 0, y: 30, scale: 0.95 }, { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power4.out" }, 0.3);
+      tl.fromTo("#s1-subheading", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.6);
+      tl.fromTo(".s1-card", { opacity: 0, y: 40 }, { opacity: 1, y: 0, stagger: 0.15, duration: 0.55, ease: "power3.out" }, 0.9);
+
+      // Exit
+      tl.to("#root", { opacity: 0, scale: 0.96, duration: 0.4, ease: "power2.in" }, 3.6);
+      tl.seek(0);
+    </script>
+  </body>
+</html>

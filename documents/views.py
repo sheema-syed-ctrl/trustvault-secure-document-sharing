@@ -307,6 +307,9 @@ def document_download_view(request, doc_id):
         content_type=content_type
     )
 
+    if document.file_size:
+        response['Content-Length'] = str(document.file_size)
+
     # Enforce strict caching and security headers
     response['Cache-Control'] = 'private, no-store, max-age=0, must-revalidate'
     response['Pragma'] = 'no-cache'

@@ -5,6 +5,7 @@ Secure Document Sharing Platform with a Real Audit Trail.
 """
 
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -21,6 +22,7 @@ _is_production = (
     or os.getenv('DJANGO_ENV', '').lower() == 'production'
     or os.getenv('RENDER') == 'true'
 )
+_is_testing = 'test' in sys.argv or 'pytest' in sys.modules or os.getenv('DJANGO_TESTING') == '1'
 
 # Debug mode:
 # Set DEBUG=False for production to prevent public exposure of technical debug pages or request metadata.
@@ -173,12 +175,22 @@ elif DB_ENGINE == 'postgresql':
     }
 
 elif _is_production:
-    from django.core.exceptions import ImproperlyConfigured
-    raise ImproperlyConfigured(
-        "DATABASE_URL must be configured in production environments. "
-        "PostgreSQL (Neon) is required for persistent data storage; "
-        "silent fallback to SQLite is prohibited in production to prevent read-only filesystem errors and data loss."
-    )
+    if 'collectstatic' in sys.argv or 'check' in sys.argv:
+        # Allow static file collection or preflight checks during container build
+        # without requiring an active live database network connection.
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': ':memory:',
+            }
+        }
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(
+            "DATABASE_URL must be configured in production environments. "
+            "PostgreSQL (Neon) is required for persistent data storage; "
+            "silent fallback to SQLite is prohibited in production to prevent read-only filesystem errors and data loss."
+        )
 
 else:
     DATABASES = {
@@ -272,6 +284,54 @@ PERMITTED_FILE_TYPES = {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
     'application/msword': ['.doc'],
 }
+
+
+# Neon Object Storage (S3-Compatible) Configuration:
+# - Configured exclusively via environment variables
+# - Private bucket storage for confidential document binaries (.bin)
+# - Direct public access and pre-signed public URLs are strictly forbidden
+AWS_ENDPOINT_URL_S3 = os.getenv('AWS_ENDPOINT_URL_S3') or os.getenv('AWS_ENDPOINT_URL')
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+
+_has_s3_config = bool(
+    AWS_STORAGE_BUCKET_NAME
+    and AWS_ACCESS_KEY_ID
+    and AWS_SECRET_ACCESS_KEY
+    and AWS_ENDPOINT_URL_S3
+)
+
+# Storage backend selection:
+# - 's3': Neon Object Storage (required in production, default when credentials configured)
+# - 'local': Local filesystem storage (PROTECTED_MEDIA_ROOT, for offline dev and local tests)
+_storage_backend_env = os.getenv('DOCUMENTS_STORAGE_BACKEND', '').lower()
+
+if _storage_backend_env in ('s3', 'local'):
+    DOCUMENTS_STORAGE_BACKEND = _storage_backend_env
+elif _is_production or (_has_s3_config and not _is_testing):
+    DOCUMENTS_STORAGE_BACKEND = 's3'
+else:
+    DOCUMENTS_STORAGE_BACKEND = 'local'
+
+# Production Storage Safeguards:
+# Local filesystem storage in production serverless is strictly prohibited.
+if _is_production and not ('collectstatic' in sys.argv or 'check' in sys.argv):
+    if DOCUMENTS_STORAGE_BACKEND != 's3':
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(
+            "DOCUMENTS_STORAGE_BACKEND cannot be 'local' in production. "
+            "Neon Object Storage (S3) is required for persistent document storage; "
+            "silent fallback to local filesystem is prohibited to prevent read-only filesystem errors and data loss."
+        )
+    if not _has_s3_config:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(
+            "Neon Object Storage credentials (AWS_STORAGE_BUCKET_NAME, AWS_ACCESS_KEY_ID, "
+            "AWS_SECRET_ACCESS_KEY, AWS_ENDPOINT_URL_S3) must be configured in production environments. "
+            "Silent fallback to local filesystem storage is strictly prohibited."
+        )
 
 
 # Authentication and Authorization Redirects

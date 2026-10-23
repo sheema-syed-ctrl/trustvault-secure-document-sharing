@@ -1,0 +1,18 @@
+{
+  "services": {
+    "trustvault": {
+      "root": ".",
+      "entrypoint": "trustvault/wsgi.py",
+      "buildCommand": "bash build.sh"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": {
+        "type": "service",
+        "service": "trustvault"
+      }
+    }
+  ]
+}

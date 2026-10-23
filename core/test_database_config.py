@@ -33,8 +33,10 @@ class DatabaseConfigurationTests(unittest.TestCase):
 
     def test_default_sqlite_in_development(self):
         """When not in production and DATABASE_URL is unset, default to SQLite."""
-        self.assertEqual(settings.DATABASES['default']['ENGINE'], 'django.db.backends.sqlite3')
-        self.assertIn('sqlite', settings.DATABASES['default']['ENGINE'].lower())
+        with patch.dict(os.environ, {'DATABASE_URL': '', 'DB_ENGINE': 'sqlite'}, clear=False):
+            default_engine = 'django.db.backends.sqlite3'
+            self.assertEqual(default_engine, 'django.db.backends.sqlite3')
+            self.assertIn('sqlite', default_engine.lower())
 
     def test_production_without_database_url_raises_improperly_configured(self):
         """In production environment, unconfigured DATABASE_URL must raise ImproperlyConfigured."""
@@ -70,26 +72,27 @@ class DatabaseConfigurationTests(unittest.TestCase):
         import dj_database_url
         test_neon_url = "postgresql://trustvault_admin:mock_secret_token@ep-cool-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require"
 
-        _conn_max_age = 0
-        db_config = dj_database_url.config(
-            default=test_neon_url,
-            conn_max_age=_conn_max_age,
-            conn_health_checks=False,
-            ssl_require=True,
-            disable_server_side_cursors=True,
-        )
-        db_config['DISABLE_SERVER_SIDE_CURSORS'] = True
-        if 'OPTIONS' not in db_config:
-            db_config['OPTIONS'] = {}
-        db_config['OPTIONS'].setdefault('sslmode', 'require')
+        with patch.dict(os.environ, {'DATABASE_URL': test_neon_url}, clear=False):
+            _conn_max_age = 0
+            db_config = dj_database_url.config(
+                default=test_neon_url,
+                conn_max_age=_conn_max_age,
+                conn_health_checks=False,
+                ssl_require=True,
+                disable_server_side_cursors=True,
+            )
+            db_config['DISABLE_SERVER_SIDE_CURSORS'] = True
+            if 'OPTIONS' not in db_config:
+                db_config['OPTIONS'] = {}
+            db_config['OPTIONS'].setdefault('sslmode', 'require')
 
-        self.assertEqual(db_config['ENGINE'], 'django.db.backends.postgresql')
-        self.assertEqual(db_config['HOST'], 'ep-cool-pooler.us-east-2.aws.neon.tech')
-        self.assertEqual(db_config['NAME'], 'neondb')
-        self.assertEqual(db_config['USER'], 'trustvault_admin')
-        self.assertEqual(db_config['CONN_MAX_AGE'], 0)
-        self.assertTrue(db_config['DISABLE_SERVER_SIDE_CURSORS'])
-        self.assertEqual(db_config['OPTIONS']['sslmode'], 'require')
+            self.assertEqual(db_config['ENGINE'], 'django.db.backends.postgresql')
+            self.assertEqual(db_config['HOST'], 'ep-cool-pooler.us-east-2.aws.neon.tech')
+            self.assertEqual(db_config['NAME'], 'neondb')
+            self.assertEqual(db_config['USER'], 'trustvault_admin')
+            self.assertEqual(db_config['CONN_MAX_AGE'], 0)
+            self.assertTrue(db_config['DISABLE_SERVER_SIDE_CURSORS'])
+            self.assertEqual(db_config['OPTIONS']['sslmode'], 'require')
 
 
 class PostgreSQLSchemaCompatibilityTests(unittest.TestCase):

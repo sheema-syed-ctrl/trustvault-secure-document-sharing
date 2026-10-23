@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <link rel="stylesheet" href="common.css" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      .outro-shield-wrap {
+        width: 120px;
+        height: 120px;
+        border-radius: 28px;
+        background: linear-gradient(135deg, #1d4ed8, #2563eb);
+        border: 2px solid #60a5fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 60px rgba(59, 130, 246, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2);
+        margin-bottom: 28px;
+      }
+
+      .outro-title {
+        font-size: 88px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: #ffffff;
+        text-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+        margin-bottom: 12px;
+      }
+
+      .outro-tagline {
+        font-size: 30px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: #93c5fd;
+        text-align: center;
+        margin-bottom: 36px;
+      }
+
+      .outro-pills-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 40px;
+      }
+
+      .outro-badge {
+        padding: 8px 20px;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid var(--tv-border-strong);
+        border-radius: 9999px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #e2e8f0;
+        font-family: var(--font-mono);
+      }
+
+      .outro-credits {
+        font-size: 15px;
+        color: var(--tv-text-subtle);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="scene5"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div class="outro-shield-wrap" id="s5-shield">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+      </div>
+
+      <h1 class="outro-title" id="s5-title">TRUSTVAULT</h1>
+      <div class="outro-tagline" id="s5-tagline">
+        "Your Documents. Your Control. Every Action Accounted For."
+      </div>
+
+      <div class="outro-pills-row" id="s5-pills">
+        <div class="outro-badge">Zero-Trust Protected Media</div>
+        <div class="outro-badge">Strict Object-Level RBAC</div>
+        <div class="outro-badge">Immutable Append-Only Audit</div>
+      </div>
+
+      <div class="outro-credits" id="s5-credits">
+        Snovasys Fresher Hiring Challenge 2026 &bull; Python / Django Backend & Fullstack Track
+      </div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["scene5"] = tl;
+
+      tl.fromTo("#s5-shield", { opacity: 0, scale: 0.7, rotation: -10 }, { opacity: 1, scale: 1, rotation: 0, duration: 0.8, ease: "elastic.out(1, 0.75)" }, 0.2);
+      tl.fromTo("#s5-title", { opacity: 0, y: 30, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: "power4.out" }, 0.5);
+      tl.fromTo("#s5-tagline", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 1.2);
+      tl.fromTo("#s5-pills", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.8);
+      tl.fromTo("#s5-credits", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 2.4);
+
+      // Final cinematic fade out
+      tl.to("#root", { opacity: 0, duration: 0.8, ease: "power2.inOut" }, 4.2);
+      tl.seek(0);
+    </script>
+  </body>
+</html>

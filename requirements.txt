@@ -21,3 +21,6 @@ certifi>=2026.10.19
 
 # Production Database Driver for PostgreSQL
 psycopg2-binary>=2.9.9
+
+# Object Storage Driver for Neon S3
+boto3>=1.34.0

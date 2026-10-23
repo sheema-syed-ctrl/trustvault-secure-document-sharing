@@ -1,0 +1,1 @@
+TrustVault — Secure document sharing engineered with zero-trust storage, granular RBAC, and an immutable audit trail. Your documents. Your control. Every action accounted for.

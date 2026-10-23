@@ -18,6 +18,7 @@ from django.utils import timezone
 from accounts.services import RBACService
 from .models import Document, DocumentCategory
 from .validators import validate_file_upload
+from .storage import S3StorageService, validate_storage_key
 
 logger = logging.getLogger('trustvault')
 
@@ -25,18 +26,29 @@ logger = logging.getLogger('trustvault')
 class DocumentService:
     """
     Centralized service for document lifecycle management:
-      - Upload and private storage storage isolation
+      - Upload and private storage isolation (Neon S3 or local fallback)
       - Metadata modification
-      - Safe physical file deletion
-      - Path traversal defenses
+      - Safe physical and remote object deletion
+      - Path traversal defenses and storage key validation
     """
 
     @staticmethod
-    def get_protected_storage_path(storage_filename: str) -> Path:
+    def is_s3_storage_active() -> bool:
+        """Determines if Neon Object Storage (S3) is the active storage backend."""
+        return getattr(settings, 'DOCUMENTS_STORAGE_BACKEND', 'local') == 's3'
+
+    @staticmethod
+    def validate_storage_key(storage_filename: str) -> str:
+        """Validates storage key format and rejects path traversal."""
+        return validate_storage_key(storage_filename)
+
+    @classmethod
+    def get_protected_storage_path(cls, storage_filename: str) -> Path:
         """
         Resolves internal storage path and ensures the target strictly resides
         within PROTECTED_MEDIA_ROOT, preventing directory traversal and symlink escape.
         """
+        cls.validate_storage_key(storage_filename)
         root = Path(settings.PROTECTED_MEDIA_ROOT).resolve()
         target = (root / storage_filename).resolve()
 
@@ -47,18 +59,18 @@ class DocumentService:
     @classmethod
     def get_authorized_file(cls, actor, document_id) -> tuple:
         """
-        Retrieves an open read file handle and document instance for authorized download.
+        Retrieves an open read file handle (or S3 streaming body) and document instance for authorized download.
         Enforces:
           - Mandatory authentication of actor.
           - Centralized object authorization via PermissionService (READ permission required).
-          - Path traversal and symlink validation.
-          - Physical file existence verification.
+          - Path traversal and storage key validation.
+          - Physical/remote file existence verification.
         Returns:
-          tuple: (open_binary_file_handle, document_instance)
+          tuple: (open_binary_file_or_stream, document_instance)
         Raises:
           PermissionDenied: If actor lacks authentication or READ authorization.
           Document.DoesNotExist: If document is not found.
-          FileNotFoundError: If physical storage file is missing from private storage.
+          FileNotFoundError: If storage file is missing from private storage.
         """
         if not actor or not actor.is_authenticated:
             raise PermissionDenied("Authentication required to access documents.")
@@ -72,6 +84,12 @@ class DocumentService:
                 f"denied access to document {document.pk} ('{document.name}')."
             )
             raise PermissionDenied("Access denied: You do not have authorization to download this document.")
+
+        cls.validate_storage_key(document.storage_filename)
+
+        if cls.is_s3_storage_active():
+            file_handle = S3StorageService.open_file(document.storage_filename)
+            return file_handle, document
 
         target_path = cls.get_protected_storage_path(document.storage_filename)
 
@@ -95,8 +113,8 @@ class DocumentService:
         category: str = DocumentCategory.GENERAL
     ) -> Document:
         """
-        Validates, saves to private storage, and registers a new Document.
-        Atomic operation: cleans up written file if database transaction fails.
+        Validates, saves to private storage (Neon S3 or local vault), and registers a new Document.
+        Atomic operation: cleans up written file/object if database transaction fails.
         """
         # 1. Authorization: Only Document Owners can upload
         if not (RBACService.is_owner(owner) or owner.is_superuser):
@@ -105,44 +123,86 @@ class DocumentService:
         # 2. File Signature & Size Validation
         file_meta = validate_file_upload(uploaded_file)
 
-        # 3. Generate Cryptographically Unique Storage Filename
+        # 3. Generate Cryptographically Unique Storage Filename & Validate Key
         storage_filename = f"{uuid.uuid4().hex}.bin"
-        target_path = cls.get_protected_storage_path(storage_filename)
+        cls.validate_storage_key(storage_filename)
 
-        written_to_disk = False
-        try:
-            # 4. Stream File to Protected Storage (Outside Web Root)
-            target_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(target_path, 'wb+') as destination:
-                for chunk in uploaded_file.chunks():
-                    destination.write(chunk)
-            written_to_disk = True
+        use_s3 = cls.is_s3_storage_active()
 
-            # 5. Atomic Database Record Creation & Audit Event
-            with transaction.atomic():
-                doc = Document.objects.create(
-                    name=name.strip(),
-                    description=description.strip(),
-                    category=category,
-                    owner=owner,
-                    original_filename=file_meta['clean_filename'],
+        if use_s3:
+            written_to_storage = False
+            try:
+                # 4a. Stream File to Neon Object Storage
+                S3StorageService.upload_file(
                     storage_filename=storage_filename,
-                    file_size=file_meta['file_size'],
-                    mime_type=file_meta['mime_type'],
-                    sha256_hash=file_meta['sha256']
+                    file_obj=uploaded_file,
+                    content_type=file_meta['mime_type']
                 )
-                from audit.services import AuditService
-                AuditService.log_document_uploaded(actor=owner, document=doc)
-                return doc
+                written_to_storage = True
 
-        except Exception as exc:
-            # Cleanup orphan file from disk if DB creation or writing failed
-            if written_to_disk and target_path.exists():
-                try:
-                    os.remove(target_path)
-                except OSError:
-                    pass
-            raise exc
+                # 5a. Atomic Database Record Creation & Audit Event
+                with transaction.atomic():
+                    doc = Document.objects.create(
+                        name=name.strip(),
+                        description=description.strip(),
+                        category=category,
+                        owner=owner,
+                        original_filename=file_meta['clean_filename'],
+                        storage_filename=storage_filename,
+                        file_size=file_meta['file_size'],
+                        mime_type=file_meta['mime_type'],
+                        sha256_hash=file_meta['sha256']
+                    )
+                    from audit.services import AuditService
+                    AuditService.log_document_uploaded(actor=owner, document=doc)
+                    return doc
+
+            except Exception as exc:
+                # Cleanup orphan file from S3 if DB creation or writing failed
+                if written_to_storage:
+                    try:
+                        S3StorageService.delete_file(storage_filename)
+                        logger.info(f"Purged orphan S3 object {storage_filename} after failed upload transaction.")
+                    except Exception as clean_err:
+                        logger.warning(f"Failed to purge orphan S3 object {storage_filename}: {clean_err}")
+                raise exc
+
+        else:
+            target_path = cls.get_protected_storage_path(storage_filename)
+            written_to_disk = False
+            try:
+                # 4b. Stream File to Protected Local Storage (Outside Web Root)
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(target_path, 'wb+') as destination:
+                    for chunk in uploaded_file.chunks():
+                        destination.write(chunk)
+                written_to_disk = True
+
+                # 5b. Atomic Database Record Creation & Audit Event
+                with transaction.atomic():
+                    doc = Document.objects.create(
+                        name=name.strip(),
+                        description=description.strip(),
+                        category=category,
+                        owner=owner,
+                        original_filename=file_meta['clean_filename'],
+                        storage_filename=storage_filename,
+                        file_size=file_meta['file_size'],
+                        mime_type=file_meta['mime_type'],
+                        sha256_hash=file_meta['sha256']
+                    )
+                    from audit.services import AuditService
+                    AuditService.log_document_uploaded(actor=owner, document=doc)
+                    return doc
+
+            except Exception as exc:
+                # Cleanup orphan file from disk if DB creation or writing failed
+                if written_to_disk and target_path.exists():
+                    try:
+                        os.remove(target_path)
+                    except OSError:
+                        pass
+                raise exc
 
     @classmethod
     def update_document_metadata(
@@ -174,55 +234,84 @@ class DocumentService:
     @classmethod
     def delete_document(cls, document: Document, actor) -> bool:
         """
-        Deletes a document record and safely removes the physical storage file.
+        Deletes a document record and safely removes the storage file (from S3 or local disk).
         Strictly restricted to the document owner.
 
         Consistency guarantee:
           - Database record deletion is executed within an atomic transaction.
           - Audit log record is captured within the same atomic transaction.
-          - Physical file cleanup is deferred until the database transaction commits
+          - File/object cleanup is deferred until the database transaction commits
             successfully via transaction.on_commit().
-          - If the database transaction fails/rolls back, the disk file is preserved.
-          - If disk file cleanup encounters an error post-commit, an error log is emitted
+          - If the database transaction fails/rolls back, the remote S3 object or disk file is preserved.
+          - If storage cleanup encounters an error post-commit, an error log is emitted
             for administrative/audit reconciliation without rolling back database state.
         """
         from permissions.services import PermissionService
         if not PermissionService.can_delete(actor, document):
             raise PermissionDenied("Access denied: Only the document owner can delete this document.")
 
-        target_path = cls.get_protected_storage_path(document.storage_filename)
+        cls.validate_storage_key(document.storage_filename)
         storage_filename = document.storage_filename
         doc_id = document.pk
         doc_name = document.name
 
-        def cleanup_physical_file():
-            if target_path.exists():
+        use_s3 = cls.is_s3_storage_active()
+
+        if use_s3:
+            def cleanup_remote_file():
                 try:
-                    os.remove(target_path)
-                    logger.info(f"Purged storage file {storage_filename} for deleted document {doc_id}.")
-                except OSError as err:
+                    S3StorageService.delete_file(storage_filename)
+                    logger.info(f"Purged S3 object {storage_filename} for deleted document {doc_id}.")
+                except Exception as err:
                     logger.error(
-                        f"CRITICAL: Failed to remove physical file from storage post-commit. "
-                        f"Document ID: {doc_id}, Storage File: {storage_filename}, Path: {target_path}. "
+                        f"CRITICAL: Failed to remove S3 object from storage post-commit. "
+                        f"Document ID: {doc_id}, Storage File: {storage_filename}. "
                         f"Error: {err}"
                     )
-            else:
-                logger.warning(
-                    f"Physical storage file already absent during deletion cleanup. "
-                    f"Document ID: {doc_id}, Storage File: {storage_filename}"
+
+            with transaction.atomic():
+                from audit.services import AuditService
+                AuditService.log_document_deleted(
+                    actor=actor,
+                    document_id=doc_id,
+                    document_name=doc_name
                 )
+                document.delete()
+                transaction.on_commit(cleanup_remote_file)
 
-        with transaction.atomic():
-            from audit.services import AuditService
-            AuditService.log_document_deleted(
-                actor=actor,
-                document_id=doc_id,
-                document_name=doc_name
-            )
-            document.delete()
-            transaction.on_commit(cleanup_physical_file)
+            return True
 
-        return True
+        else:
+            target_path = cls.get_protected_storage_path(document.storage_filename)
+
+            def cleanup_physical_file():
+                if target_path.exists():
+                    try:
+                        os.remove(target_path)
+                        logger.info(f"Purged storage file {storage_filename} for deleted document {doc_id}.")
+                    except OSError as err:
+                        logger.error(
+                            f"CRITICAL: Failed to remove physical file from storage post-commit. "
+                            f"Document ID: {doc_id}, Storage File: {storage_filename}, Path: {target_path}. "
+                            f"Error: {err}"
+                        )
+                else:
+                    logger.warning(
+                        f"Physical storage file already absent during deletion cleanup. "
+                        f"Document ID: {doc_id}, Storage File: {storage_filename}"
+                    )
+
+            with transaction.atomic():
+                from audit.services import AuditService
+                AuditService.log_document_deleted(
+                    actor=actor,
+                    document_id=doc_id,
+                    document_name=doc_name
+                )
+                document.delete()
+                transaction.on_commit(cleanup_physical_file)
+
+            return True
 
     @classmethod
     def search_and_filter_documents(

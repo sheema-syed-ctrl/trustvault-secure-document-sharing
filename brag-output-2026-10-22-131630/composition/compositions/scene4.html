@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <link rel="stylesheet" href="common.css" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      .enforcement-grid {
+        display: grid;
+        grid-template-columns: 560px 1fr;
+        gap: 36px;
+        width: 100%;
+        max-width: 1480px;
+      }
+      .violation-card {
+        background: #140b0f;
+        border: 1px solid rgba(239, 68, 68, 0.45);
+        border-radius: 16px;
+        padding: 32px 30px;
+        box-shadow: 0 0 40px rgba(239, 68, 68, 0.15);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .violation-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        color: #ef4444;
+      }
+      .violation-code {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        font-family: var(--font-mono);
+      }
+      .violation-msg {
+        font-size: 15px;
+        line-height: 1.5;
+        color: #fecaca;
+        background: rgba(239, 68, 68, 0.1);
+        padding: 14px 18px;
+        border-radius: 8px;
+        border-left: 3px solid #ef4444;
+      }
+      .violation-meta {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        color: #94a3b8;
+        line-height: 1.8;
+      }
+      .audit-card {
+        background: var(--tv-bg-surface);
+        border: 1px solid var(--tv-border-strong);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      }
+      .audit-card-header {
+        background: #090e1a;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--tv-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .status-pill {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 9999px;
+      }
+      .status-active { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+      .audit-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .audit-table th {
+        text-align: left;
+        padding: 14px 20px;
+        background: rgba(15, 23, 42, 0.7);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--tv-text-subtle);
+        border-bottom: 1px solid var(--tv-border);
+      }
+      .audit-table td {
+        padding: 16px 20px;
+        font-size: 14px;
+        font-family: var(--font-mono);
+        color: var(--tv-text-main);
+        border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+      }
+      .event-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .event-denied { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+      .event-revoked { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+      .event-granted { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+      .event-uploaded { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="scene4"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="s4-pill" class="tv-pill pill-danger">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>REAL-TIME INCIDENT ENFORCEMENT</span>
+      </div>
+
+      <h1 id="s4-heading" class="hero-heading">
+        Zero-Trust Boundary & Immutable Audit Trail
+      </h1>
+
+      <p id="s4-subheading" class="hero-subheading">
+        Revocation immediately terminates streaming access. Security violations trigger HTTP 403 and are permanently logged in the append-only ledger.
+      </p>
+
+      <div class="enforcement-grid">
+        <div class="violation-card" id="s4-violation">
+          <div class="violation-header">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            <div class="violation-code">HTTP 403 — ACCESS DENIED</div>
+          </div>
+
+          <div class="violation-msg">
+            <strong>Security Policy Violation:</strong> You do not have authorization to access or download this document resource.
+          </div>
+
+          <div class="violation-meta">
+            <div>Event Code: <strong style="color: #ffffff;">SEC-AUTH-403</strong></div>
+            <div>Actor: <strong style="color: #fca5a5;">viewer_demo</strong> (Access Revoked)</div>
+            <div>Target: <strong style="color: #ffffff;">Board Resolution Q3 2026</strong></div>
+            <div>Enforcement: <strong style="color: #6ee7b7;">Server-Side Dynamic Gate</strong></div>
+            <div style="margin-top: 10px; color: #fca5a5; font-size: 12px;">
+              &bull; Incident logged to immutable audit trail permanently.
+            </div>
+          </div>
+        </div>
+
+        <div class="audit-card" id="s4-audit">
+          <div class="audit-card-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span style="font-size: 14px; font-weight: 700; color: #f8fafc; font-family: var(--font-mono);">GLOBAL AUDIT STREAM (READ-ONLY)</span>
+            </div>
+            <span class="status-pill status-active">APPEND-ONLY ORM</span>
+          </div>
+
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Timestamp (UTC)</th>
+                <th>Event Type</th>
+                <th>Actor</th>
+                <th>Target Resource</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="audit-row-1">
+                <td>2026-10-19 21:01:25</td>
+                <td><span class="event-badge event-denied">ACCESS_DENIED</span></td>
+                <td style="color: #fca5a5;">viewer_demo</td>
+                <td>Board Resolution.txt</td>
+                <td style="color: #ef4444; font-weight: 700;">FAILURE</td>
+              </tr>
+              <tr id="audit-row-2">
+                <td>2026-10-19 21:01:25</td>
+                <td><span class="event-badge event-revoked">PERM_REVOKED</span></td>
+                <td>owner_demo</td>
+                <td>Board Resolution.txt</td>
+                <td style="color: #10b981; font-weight: 700;">SUCCESS</td>
+              </tr>
+              <tr id="audit-row-3">
+                <td>2026-10-19 21:01:24</td>
+                <td><span class="event-badge event-granted">PERM_GRANTED</span></td>
+                <td>owner_demo</td>
+                <td>Security Audit.pdf</td>
+                <td style="color: #10b981; font-weight: 700;">SUCCESS</td>
+              </tr>
+              <tr id="audit-row-4">
+                <td>2026-10-19 21:01:24</td>
+                <td><span class="event-badge event-uploaded">DOC_UPLOADED</span></td>
+                <td>owner_demo</td>
+                <td>Architecture Spec.pdf</td>
+                <td style="color: #10b981; font-weight: 700;">SUCCESS</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="background: #090e1a; padding: 12px 20px; font-family: var(--font-mono); font-size: 12px; color: var(--tv-text-subtle); display: flex; justify-content: space-between;">
+            <span>AuditQuerySet Blocks Bulk Update & Deletion</span>
+            <span style="color: #10b981;">Tamper-Resistant Log</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["scene4"] = tl;
+
+      tl.fromTo("#s4-pill", { opacity: 0, y: -15 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 0.1);
+      tl.fromTo("#s4-heading", { opacity: 0, y: 25 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.2);
+      tl.fromTo("#s4-subheading", { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.4);
+      tl.fromTo("#s4-violation", { opacity: 0, x: -40, scale: 0.96 }, { opacity: 1, x: 0, scale: 1, duration: 0.6, ease: "back.out(1.2)" }, 0.6);
+      tl.fromTo("#s4-audit", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 1.0);
+      tl.fromTo("#audit-row-1", { backgroundColor: "rgba(239, 68, 68, 0.25)" }, { backgroundColor: "transparent", duration: 0.8 }, 1.6);
+
+      // Exit
+      tl.to("#root", { opacity: 0, duration: 0.4, ease: "power2.in" }, 5.6);
+      tl.seek(0);
+    </script>
+  </body>
+</html>

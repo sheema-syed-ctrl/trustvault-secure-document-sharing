@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <link rel="stylesheet" href="common.css" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      .vault-window {
+        width: 100%;
+        max-width: 1360px;
+        background: var(--tv-bg-surface);
+        border: 1px solid var(--tv-border-strong);
+        border-radius: 18px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(59, 130, 246, 0.2);
+        overflow: hidden;
+      }
+      .vault-window-header {
+        background: #0b1120;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--tv-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .vault-window-dots {
+        display: flex;
+        gap: 8px;
+      }
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+      .dot-red { background: #ef4444; }
+      .dot-amber { background: #f59e0b; }
+      .dot-green { background: #10b981; }
+      .vault-window-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--tv-text-muted);
+        font-family: var(--font-mono);
+      }
+      .status-pill {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 9999px;
+      }
+      .status-active { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+      .vault-inventory-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .vault-inventory-table th {
+        text-align: left;
+        padding: 16px 28px;
+        background: rgba(15, 23, 42, 0.6);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--tv-text-subtle);
+        border-bottom: 1px solid var(--tv-border);
+      }
+      .vault-inventory-table td {
+        padding: 20px 28px;
+        font-size: 15px;
+        color: var(--tv-text-main);
+        border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+      }
+      .doc-cell {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .doc-icon-badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(59, 130, 246, 0.12);
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #60a5fa;
+        font-size: 18px;
+      }
+      .doc-title-text {
+        font-size: 16px;
+        font-weight: 600;
+        color: #ffffff;
+      }
+      .doc-uuid-text {
+        font-size: 12px;
+        font-family: var(--font-mono);
+        color: var(--tv-text-subtle);
+        margin-top: 2px;
+      }
+      .category-badge {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        font-family: var(--font-mono);
+      }
+      .cat-tech { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+      .cat-legal { background: rgba(168, 85, 247, 0.15); color: #d8b4fe; }
+      .cat-fin { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+      .vault-footer-strip {
+        background: #090e1a;
+        padding: 14px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        color: #93c5fd;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="scene2"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="s2-pill" class="tv-pill pill-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>ENTERPRISE DOCUMENT VAULT</span>
+      </div>
+
+      <h1 id="s2-heading" class="hero-heading">
+        Zero-Trust Storage & Document Management
+      </h1>
+
+      <p id="s2-subheading" class="hero-subheading">
+        Files are isolated in <strong>protected_media/</strong> under cryptographic UUIDs. Never exposed as direct URLs. Every byte streamed through server-side authorization.
+      </p>
+
+      <div class="vault-window" id="s2-window">
+        <div class="vault-window-header">
+          <div class="vault-window-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-amber"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <div class="vault-window-title">workspace/owner_demo/vault_inventory</div>
+          <div class="status-pill status-active">AUTHENTICATED: OWNER</div>
+        </div>
+
+        <table class="vault-inventory-table">
+          <thead>
+            <tr>
+              <th>Document Title & UUID Storage Reference</th>
+              <th>Category</th>
+              <th>Size</th>
+              <th>Access Policy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="doc-row">
+              <td>
+                <div class="doc-cell">
+                  <div class="doc-icon-badge">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </div>
+                  <div>
+                    <div class="doc-title-text">TrustVault Architecture Spec</div>
+                    <div class="doc-uuid-text">protected_media/d8b8e84a-7142-4b2a-a9e1.bin</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="category-badge cat-tech">TECHNICAL</span></td>
+              <td>214 B</td>
+              <td><span class="status-pill status-active">PROTECTED</span></td>
+            </tr>
+            <tr class="doc-row">
+              <td>
+                <div class="doc-cell">
+                  <div class="doc-icon-badge">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </div>
+                  <div>
+                    <div class="doc-title-text">Enterprise Security Audit</div>
+                    <div class="doc-uuid-text">protected_media/4f19b22a-e831-419b-b0cc.bin</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="category-badge cat-legal">LEGAL</span></td>
+              <td>214 B</td>
+              <td><span class="status-pill status-active">PROTECTED</span></td>
+            </tr>
+            <tr class="doc-row">
+              <td>
+                <div class="doc-cell">
+                  <div class="doc-icon-badge">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </div>
+                  <div>
+                    <div class="doc-title-text">Board Resolution Q3 2026</div>
+                    <div class="doc-uuid-text">protected_media/9a37c10b-1142-491a-9f55.bin</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="category-badge cat-fin">FINANCIAL</span></td>
+              <td>178 B</td>
+              <td><span class="status-pill status-active">PROTECTED</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="vault-footer-strip">
+          <span>&bull; Binary Magic-Byte Signature Verification Active</span>
+          <span>Path Traversal Defenses: STRICT IS_RELATIVE_TO</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["scene2"] = tl;
+
+      tl.fromTo("#s2-pill", { opacity: 0, y: -15 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 0.1);
+      tl.fromTo("#s2-heading", { opacity: 0, y: 25 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.2);
+      tl.fromTo("#s2-subheading", { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.4);
+      tl.fromTo("#s2-window", { opacity: 0, y: 40, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.65, ease: "power4.out" }, 0.6);
+      tl.fromTo(".doc-row", { opacity: 0, x: -20 }, { opacity: 1, x: 0, stagger: 0.15, duration: 0.45, ease: "power2.out" }, 0.9);
+
+      // Exit
+      tl.to("#root", { opacity: 0, x: -40, duration: 0.4, ease: "power2.in" }, 4.1);
+      tl.seek(0);
+    </script>
+  </body>
+</html>

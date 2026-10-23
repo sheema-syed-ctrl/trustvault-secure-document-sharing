@@ -65,3 +65,16 @@ Thumbs.db
 
 # Archive and packaging artifacts
 *.zip
+.vercel
+.env*
+
+# Antigravity & Vercel CLI local artifacts
+.agents/
+.neon
+.vercel/
+*.backup*
+remote_error.html
+node_modules/
+package.json
+package-lock.json
+skills-lock.json

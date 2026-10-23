@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <link rel="stylesheet" href="common.css" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      .rbac-grid {
+        display: grid;
+        grid-template-columns: 440px 1fr;
+        gap: 36px;
+        width: 100%;
+        max-width: 1440px;
+      }
+      .personas-card {
+        background: var(--tv-bg-surface);
+        border: 1px solid var(--tv-border);
+        border-radius: 16px;
+        padding: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .persona-row {
+        background: var(--tv-bg-elevated);
+        border: 1px solid var(--tv-border);
+        border-radius: 12px;
+        padding: 16px 18px;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+      }
+      .persona-badge {
+        font-size: 11px;
+        font-weight: 700;
+        font-family: var(--font-mono);
+        padding: 4px 8px;
+        border-radius: 6px;
+        text-transform: uppercase;
+      }
+      .badge-admin { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+      .badge-owner { background: rgba(59, 130, 246, 0.15); color: #93c5fd; }
+      .badge-viewer { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+      .persona-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #f8fafc;
+      }
+      .persona-desc {
+        font-size: 13px;
+        color: var(--tv-text-muted);
+        margin-top: 4px;
+        line-height: 1.4;
+      }
+      .permissions-interface {
+        background: var(--tv-bg-surface);
+        border: 1px solid var(--tv-border-strong);
+        border-radius: 16px;
+        padding: 28px 32px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .perm-row {
+        background: var(--tv-bg-elevated);
+        border: 1px solid var(--tv-border);
+        border-radius: 12px;
+        padding: 18px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .grantee-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .perm-pill {
+        font-size: 12px;
+        font-family: var(--font-mono);
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 6px;
+      }
+      .perm-read { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+      .perm-edit { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+      .revoke-btn {
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid #ef4444;
+        color: #fca5a5;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 700;
+        padding: 8px 18px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .status-pill {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 9999px;
+      }
+      .status-active { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+      .nav-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        background: rgba(59, 130, 246, 0.12);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 9999px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #93c5fd;
+        font-family: var(--font-mono);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="scene3"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="s3-pill" class="tv-pill pill-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>STRICT OBJECT-LEVEL RBAC</span>
+      </div>
+
+      <h1 id="s3-heading" class="hero-heading">
+        Named Grants & Instant Revocation
+      </h1>
+
+      <p id="s3-subheading" class="hero-subheading">
+        Three explicit personas. Owners grant granular <strong>READ</strong> and <strong>EDIT</strong> rights to specific users. Instant revocation cuts access across all streaming endpoints.
+      </p>
+
+      <div class="rbac-grid">
+        <div class="personas-card">
+          <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--tv-text-subtle); letter-spacing: 0.05em; font-family: var(--font-mono);">
+            3 Discrete Personas
+          </div>
+
+          <div class="persona-row">
+            <span class="persona-badge badge-admin">ADMIN</span>
+            <div>
+              <div class="persona-title">Administrator</div>
+              <div class="persona-desc">Governs accounts & audit logs. Document downloads strictly suppressed for zero eavesdropping.</div>
+            </div>
+          </div>
+
+          <div class="persona-row">
+            <span class="persona-badge badge-owner">OWNER</span>
+            <div>
+              <div class="persona-title">Document Owner</div>
+              <div class="persona-desc">Full upload, metadata edit, permission delegation & revocation authority.</div>
+            </div>
+          </div>
+
+          <div class="persona-row">
+            <span class="persona-badge badge-viewer">VIEWER</span>
+            <div>
+              <div class="persona-title">Authorized Viewer</div>
+              <div class="persona-desc">Strictly limited to explicitly granted files with READ or EDIT capabilities.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="permissions-interface">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--tv-border); padding-bottom: 14px;">
+            <div>
+              <div style="font-size: 18px; font-weight: 700; color: #ffffff;">Share Settings: Board Resolution Q3 2026</div>
+              <div style="font-size: 13px; color: var(--tv-text-muted);">Controlled by owner_demo &bull; Target: Financial Confidential</div>
+            </div>
+            <span class="nav-badge">PERMISSION ENGINE</span>
+          </div>
+
+          <div class="perm-row">
+            <div class="grantee-name">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>viewer_demo</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <span class="perm-pill perm-read">PERMISSION: READ</span>
+              <span id="perm-status-badge" class="status-pill status-active">ACTIVE GRANT</span>
+              <button id="revoke-action-btn" class="revoke-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <span>REVOKE ACCESS</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="perm-row">
+            <div class="grantee-name">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>auditor_external</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <span class="perm-pill perm-edit">PERMISSION: EDIT</span>
+              <span class="status-pill status-active">ACTIVE GRANT</span>
+              <span style="font-size: 13px; color: var(--tv-text-muted); font-family: var(--font-mono);">SCOPED</span>
+            </div>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 12px 18px; border-radius: 8px; font-family: var(--font-mono); font-size: 12px; color: #94a3b8; display: flex; justify-content: space-between;">
+            <span>Dynamic Request-Level Authorization</span>
+            <span style="color: #60a5fa;">Zero Cached Permission Drift</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["scene3"] = tl;
+
+      tl.fromTo("#s3-pill", { opacity: 0, y: -15 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 0.1);
+      tl.fromTo("#s3-heading", { opacity: 0, y: 25 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.2);
+      tl.fromTo("#s3-subheading", { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.4);
+      tl.fromTo(".persona-row", { opacity: 0, x: -25 }, { opacity: 1, x: 0, stagger: 0.15, duration: 0.5, ease: "power3.out" }, 0.6);
+      tl.fromTo(".permissions-interface", { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.6, ease: "power4.out" }, 0.7);
+
+      // Simulated click & status change at t=3.5s
+      tl.to("#revoke-action-btn", { scale: 0.92, duration: 0.1, yoyo: true, repeat: 1, ease: "power1.inOut" }, 3.5);
+      tl.to("#perm-status-badge", {
+        backgroundColor: "rgba(239, 68, 68, 0.25)",
+        color: "#fca5a5",
+        borderColor: "rgba(239, 68, 68, 0.5)",
+        textContent: "ACCESS REVOKED",
+        duration: 0.2
+      }, 3.6);
+
+      // Exit
+      tl.to("#root", { opacity: 0, scale: 0.96, duration: 0.4, ease: "power2.in" }, 5.1);
+      tl.seek(0);
+    </script>
+  </body>
+</html>

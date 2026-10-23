@@ -65,7 +65,15 @@ The following environment variables must be configured in production:
    python manage.py collectstatic --noinput
    ```
 
-### Option C: Docker / Linux VPS (Ubuntu 22.04 LTS)
+### Option C: Vercel Serverless + Neon PostgreSQL & Object Storage (Production Deployed)
+TrustVault is deployed and verified live on **Vercel** ([https://trustvault-lemon.vercel.app](https://trustvault-lemon.vercel.app)):
+1. **Serverless Execution:** Powered by Vercel WSGI entrypoint (`trustvault/wsgi.py`) and zero-downtime builds (`vercel.json`).
+2. **Managed PostgreSQL:** Hosted on **Neon Serverless PostgreSQL** with PgBouncer connection pooling (`DATABASE_URL`), `CONN_MAX_AGE=0` to prevent connection exhaustion in serverless workers, and `DISABLE_SERVER_SIDE_CURSORS=True`.
+3. **Private Document Storage:** Hosted on private **Neon Object Storage** (`trustvault-documents` S3 bucket). Document binaries are never exposed publicly; all downloads stream through authenticated and authorized Django controllers (`/documents/<id>/download/`) with SHA-256 integrity checks.
+4. **Static Assets:** Handled via WhiteNoise with compressed asset caching and `/tmp/staticfiles` generation during serverless execution.
+5. **Fail-Closed Security:** Strict production checks prevent silent fallback to SQLite or local filesystem storage in production.
+
+### Option D: Docker / Linux VPS (Ubuntu 22.04 LTS)
 Sample Nginx reverse proxy configuration:
 ```nginx
 server {

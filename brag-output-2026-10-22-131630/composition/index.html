@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>TrustVault — Secure Document Sharing with a Real Audit Trail</title>
+    <link rel="stylesheet" href="compositions/common.css" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        background: #070a12;
+        overflow: hidden;
+      }
+      .grid-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 1920px; height: 1080px;
+        background-size: 40px 40px;
+        background-image: 
+          linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        pointer-events: none;
+      }
+      .ambient-glow {
+        position: absolute;
+        width: 1000px; height: 1000px;
+        border-radius: 50%;
+        filter: blur(140px);
+        pointer-events: none;
+        opacity: 0.45;
+      }
+      .glow-blue {
+        top: -200px; left: 460px;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, transparent 70%);
+      }
+      .top-nav {
+        position: absolute;
+        top: 40px; left: 80px; right: 80px; height: 60px;
+        display: flex; align-items: center; justify-content: space-between;
+        z-index: 50;
+      }
+      .brand-lockup { display: flex; align-items: center; gap: 14px; }
+      .brand-logo-shield {
+        width: 38px; height: 38px;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        border: 1px solid #60a5fa; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 0 16px rgba(59, 130, 246, 0.4);
+      }
+      .brand-title { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; color: #ffffff; }
+      .nav-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 6px 14px;
+        background: rgba(59, 130, 246, 0.12);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 9999px;
+        font-size: 13px; font-weight: 600; color: #93c5fd; font-family: var(--font-mono);
+      }
+      .nav-badge-dot {
+        width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 8px #3b82f6;
+      }
+      .subcomp-host {
+        position: absolute;
+        top: 0; left: 0; width: 1920px; height: 1080px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="root"
+      data-start="0"
+      data-duration="25"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio
+        id="bg-music"
+        src="assets/music/happy-beats-business-moves-vol-11-by-ende-dot-app.mp3"
+        data-start="0"
+        data-duration="25"
+        data-volume="0.75"
+        data-fade-out="1.5"
+      ></audio>
+
+      <audio
+        id="sfx-impact-1"
+        src="assets/sfx/impactSoft_heavy_003.ogg"
+        data-start="0.4"
+        data-duration="0.55"
+        data-volume="0.65"
+      ></audio>
+
+      <audio
+        id="sfx-card-slide"
+        src="assets/sfx/card-slide-1.ogg"
+        data-start="4.2"
+        data-duration="0.60"
+        data-volume="0.55"
+      ></audio>
+
+      <audio
+        id="sfx-click"
+        src="assets/sfx/click_003.ogg"
+        data-start="8.8"
+        data-duration="0.05"
+        data-volume="0.6"
+      ></audio>
+
+      <audio
+        id="sfx-switch"
+        src="assets/sfx/switch_007.ogg"
+        data-start="12.0"
+        data-duration="0.62"
+        data-volume="0.75"
+      ></audio>
+
+      <audio
+        id="sfx-glitch"
+        src="assets/sfx/glitch_002.ogg"
+        data-start="14.2"
+        data-duration="0.05"
+        data-volume="0.55"
+      ></audio>
+
+      <audio
+        id="sfx-impact-4"
+        src="assets/sfx/impactSoft_medium_001.ogg"
+        data-start="16.5"
+        data-duration="0.20"
+        data-volume="0.55"
+      ></audio>
+
+      <audio
+        id="sfx-bell"
+        src="assets/sfx/impactBell_heavy_000.ogg"
+        data-start="20.5"
+        data-duration="1.50"
+        data-volume="0.85"
+      ></audio>
+
+      <div class="grid-overlay"></div>
+      <div id="ambient-blue" class="ambient-glow glow-blue"></div>
+
+      <header class="top-nav">
+        <div class="brand-lockup">
+          <div class="brand-logo-shield">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div class="brand-title">TRUSTVAULT</div>
+        </div>
+        <div class="nav-badge">
+          <span class="nav-badge-dot"></span>
+          <span>ZERO-TRUST STORAGE ENGINE</span>
+        </div>
+      </header>
+
+      <!-- Sub-compositions -->
+      <div id="mount-scene1" class="clip subcomp-host" data-composition-id="scene1-host" data-composition-src="compositions/scene1.html" data-start="0" data-duration="4.0"></div>
+      <div id="mount-scene2" class="clip subcomp-host" data-composition-id="scene2-host" data-composition-src="compositions/scene2.html" data-start="4.0" data-duration="4.5"></div>
+      <div id="mount-scene3" class="clip subcomp-host" data-composition-id="scene3-host" data-composition-src="compositions/scene3.html" data-start="8.5" data-duration="5.5"></div>
+      <div id="mount-scene4" class="clip subcomp-host" data-composition-id="scene4-host" data-composition-src="compositions/scene4.html" data-start="14.0" data-duration="6.0"></div>
+      <div id="mount-scene5" class="clip subcomp-host" data-composition-id="scene5-host" data-composition-src="compositions/scene5.html" data-start="20.0" data-duration="5.0"></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["root"] = tl;
+
+      tl.to("#ambient-blue", { scale: 1.15, opacity: 0.6, duration: 12.5, yoyo: true, repeat: 1, ease: "sine.inOut" }, 0);
+      tl.to(".top-nav", { opacity: 0, duration: 0.8, ease: "power2.inOut" }, 24.2);
+      tl.seek(0);
+    </script>
+  </body>
+</html>
