@@ -125,20 +125,37 @@ WSGI_APPLICATION = 'trustvault.wsgi.application'
 AUTH_USER_MODEL = 'accounts.User'
 
 
-# Database Configuration: SQLite for dev, PostgreSQL/DATABASE_URL ready for production
+# Database Configuration:
+# - SQLite for local development when DATABASE_URL is not configured
+# - PostgreSQL via DATABASE_URL in production (Neon serverless with PgBouncer connection pooling)
+# - Silent fallback to SQLite is strictly forbidden in production to prevent read-only filesystem errors and data loss
 DATABASE_URL = os.getenv('DATABASE_URL')
 DB_ENGINE = os.getenv('DB_ENGINE', 'sqlite').lower()
 
 if DATABASE_URL:
     import dj_database_url
+    # In serverless environments (e.g. Vercel Lambda), persistent connections cause pool exhaustion.
+    # Default to 0 in production so connections close after each request, or respect CONN_MAX_AGE env var.
+    _default_conn_max_age = 0 if _is_production else 600
+    _conn_max_age = int(os.getenv('CONN_MAX_AGE', str(_default_conn_max_age)))
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
+            conn_max_age=_conn_max_age,
+            conn_health_checks=False if _conn_max_age == 0 else True,
+            ssl_require=True,
+            disable_server_side_cursors=True,
         )
     }
+    # Neon PgBouncer transaction pooling requires disabling server-side cursors
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
+    if 'OPTIONS' not in DATABASES['default']:
+        DATABASES['default']['OPTIONS'] = {}
+    DATABASES['default']['OPTIONS'].setdefault('sslmode', 'require')
+
 elif DB_ENGINE == 'postgresql':
+    _default_conn_max_age = 0 if _is_production else 600
+    _conn_max_age = int(os.getenv('CONN_MAX_AGE', str(_default_conn_max_age)))
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -147,8 +164,22 @@ elif DB_ENGINE == 'postgresql':
             'PASSWORD': os.getenv('DB_PASSWORD', ''),
             'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': os.getenv('DB_PORT', '5432'),
+            'CONN_MAX_AGE': _conn_max_age,
+            'DISABLE_SERVER_SIDE_CURSORS': True,
+            'OPTIONS': {
+                'sslmode': os.getenv('DB_SSLMODE', 'require' if _is_production else 'prefer'),
+            },
         }
     }
+
+elif _is_production:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        "DATABASE_URL must be configured in production environments. "
+        "PostgreSQL (Neon) is required for persistent data storage; "
+        "silent fallback to SQLite is prohibited in production to prevent read-only filesystem errors and data loss."
+    )
+
 else:
     DATABASES = {
         'default': {
