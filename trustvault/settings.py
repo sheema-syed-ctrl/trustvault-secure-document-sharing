@@ -28,7 +28,7 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost,[::1]').split(',')
+    for host in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost,[::1],.vercel.app').split(',')
     if host.strip()
 ]
 
@@ -150,7 +150,15 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATIC_ROOT.mkdir(parents=True, exist_ok=True)
+
+# Safe directory creation: avoid startup failure in read-only environments (e.g. Vercel serverless)
+try:
+    STATIC_ROOT.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
+
+# When WhiteNoise is enabled, fallback gracefully if unmanifested static files are referenced
+WHITENOISE_MANIFEST_STRICT = os.getenv('WHITENOISE_MANIFEST_STRICT', 'False').lower() in ('true', '1')
 
 # Static Files Storage Configuration (WhiteNoise in production)
 STORAGES = {
@@ -172,7 +180,12 @@ if os.path.isabs(_protected_media_env):
     PROTECTED_MEDIA_ROOT = Path(_protected_media_env)
 else:
     PROTECTED_MEDIA_ROOT = BASE_DIR / _protected_media_env
-PROTECTED_MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+
+# Safe directory creation: avoid startup failure if storage root is read-only
+try:
+    PROTECTED_MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
 
 # Maximum file upload size (default 25 MB)
 MAX_UPLOAD_SIZE_BYTES = int(os.getenv('MAX_UPLOAD_SIZE_MB', '25')) * 1024 * 1024
@@ -207,15 +220,22 @@ SESSION_SAVE_EVERY_REQUEST = True
 CSRF_COOKIE_HTTPONLY = False  # Allows JS to read token if needed for AJAX, but standard forms use {% csrf_token %}
 CSRF_COOKIE_SAMESITE = 'Lax'
 
-# CSRF Trusted Origins for reverse proxies and PaaS providers (e.g. Render, Railway)
+# CSRF Trusted Origins for reverse proxies and PaaS providers (e.g. Render, Railway, Vercel)
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
     if origin.strip()
 ]
+if os.getenv('VERCEL') == '1' or os.getenv('VERCEL_ENV'):
+    if 'https://*.vercel.app' not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append('https://*.vercel.app')
 
-# Reverse Proxy SSL Header detection
-if os.getenv('SECURE_PROXY_SSL_HEADER', 'False').lower() in ('true', '1'):
+# Reverse Proxy SSL Header detection (enabled via env or automatically in Vercel)
+if (
+    os.getenv('SECURE_PROXY_SSL_HEADER', 'False').lower() in ('true', '1')
+    or os.getenv('VERCEL') == '1'
+    or os.getenv('VERCEL_ENV')
+):
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Production SSL flags (default False in local dev, enabled via .env in production)
@@ -230,8 +250,24 @@ SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'False').lower() in ('tru
 
 
 # Logging Configuration
-LOG_DIR = BASE_DIR / 'logs'
-LOG_DIR.mkdir(parents=True, exist_ok=True)
+# In serverless/read-only environments (e.g. Vercel), write runtime logs to temporary directory
+_is_vercel = os.getenv('VERCEL') == '1' or bool(os.getenv('VERCEL_ENV'))
+
+if _is_vercel:
+    import tempfile
+    LOG_DIR = Path(tempfile.gettempdir()) / 'logs'
+else:
+    LOG_DIR = Path(os.getenv('LOG_DIR', BASE_DIR / 'logs'))
+
+try:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    import tempfile
+    LOG_DIR = Path(tempfile.gettempdir()) / 'trustvault_logs'
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
 
 LOGGING = {
     'version': 1,
