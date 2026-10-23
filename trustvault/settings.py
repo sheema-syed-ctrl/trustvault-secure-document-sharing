@@ -14,8 +14,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load environment variables from .env file if it exists
 load_dotenv(BASE_DIR / '.env')
 
-# Debug mode controlled strictly via environment variable
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
+# Deployment environment detection
+_is_vercel = os.getenv('VERCEL') == '1' or bool(os.getenv('VERCEL_ENV'))
+_is_production = (
+    _is_vercel
+    or os.getenv('DJANGO_ENV', '').lower() == 'production'
+    or os.getenv('RENDER') == 'true'
+)
+
+# Debug mode:
+# Set DEBUG=False for production to prevent public exposure of technical debug pages or request metadata.
+# In local development, defaults to True unless overridden via environment variable.
+if _is_production:
+    DEBUG = False
+else:
+    DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 # Secret key strictly loaded from environment; prohibited from falling back in production
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -26,11 +39,33 @@ if not SECRET_KEY:
         from django.core.exceptions import ImproperlyConfigured
         raise ImproperlyConfigured("The SECRET_KEY environment variable must be set in production.")
 
-ALLOWED_HOSTS = [
+# Host validation configuration:
+# 1. Base loopback hosts always permitted for local development, internal routing, and health checks.
+# 2. Production Vercel deployment domains (sheema-ivory.vercel.app, .vercel.app) always guaranteed.
+# 3. Dynamic Vercel environment domains (VERCEL_URL, VERCEL_PROJECT_PRODUCTION_URL).
+# 4. Safely parse comma-separated hostnames from ALLOWED_HOSTS env var, trimming whitespace.
+# 5. Wildcard '*' is strictly prohibited to prevent HTTP Host header poisoning.
+_base_hosts = ['127.0.0.1', 'localhost', '[::1]']
+_production_hosts = ['sheema-ivory.vercel.app', '.vercel.app']
+
+_vercel_url = os.getenv('VERCEL_URL', '').strip()
+if _vercel_url:
+    _production_hosts.append(_vercel_url)
+_vercel_prod_url = os.getenv('VERCEL_PROJECT_PRODUCTION_URL', '').strip()
+if _vercel_prod_url:
+    _production_hosts.append(_vercel_prod_url)
+
+_env_hosts = [
     host.strip()
-    for host in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost,[::1],.vercel.app').split(',')
+    for host in os.getenv('ALLOWED_HOSTS', '').split(',')
     if host.strip()
 ]
+
+_all_hosts = _base_hosts + _production_hosts + _env_hosts
+ALLOWED_HOSTS = []
+for host in _all_hosts:
+    if host != '*' and host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(host)
 
 
 # Application definition
@@ -226,15 +261,25 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
     if origin.strip()
 ]
-if os.getenv('VERCEL') == '1' or os.getenv('VERCEL_ENV'):
-    if 'https://*.vercel.app' not in CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS.append('https://*.vercel.app')
+
+# Ensure Vercel production domains are always trusted for HTTPS CSRF verification
+_trusted_defaults = [
+    'https://sheema-ivory.vercel.app',
+    'https://*.vercel.app',
+]
+for _origin in _trusted_defaults:
+    if _origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_origin)
+
+if _vercel_url and f'https://{_vercel_url}' not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{_vercel_url}')
+if _vercel_prod_url and f'https://{_vercel_prod_url}' not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{_vercel_prod_url}')
 
 # Reverse Proxy SSL Header detection (enabled via env or automatically in Vercel)
 if (
     os.getenv('SECURE_PROXY_SSL_HEADER', 'False').lower() in ('true', '1')
-    or os.getenv('VERCEL') == '1'
-    or os.getenv('VERCEL_ENV')
+    or _is_vercel
 ):
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -251,8 +296,6 @@ SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'False').lower() in ('tru
 
 # Logging Configuration
 # In serverless/read-only environments (e.g. Vercel), write runtime logs to temporary directory
-_is_vercel = os.getenv('VERCEL') == '1' or bool(os.getenv('VERCEL_ENV'))
-
 if _is_vercel:
     import tempfile
     LOG_DIR = Path(tempfile.gettempdir()) / 'logs'
